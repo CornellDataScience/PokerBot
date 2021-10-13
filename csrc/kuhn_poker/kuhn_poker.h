@@ -47,7 +47,7 @@ class Game {
   const std::pair<int, int> community_pot;
   const std::pair<int, int> stack;
 
-  Game(int deck_size, int num_faces)
+  Game(int deck_size)
       : deck_size(deck_size),
         num_actions_(4),
         num_hands_(deck_size),
@@ -67,8 +67,6 @@ class Game {
   std::pair<int, int> stack() const{ return stack_; }
   // Upper bound for how deep game tree could be.
   int max_depth() const { return 3; }
-
-
 
   PartialPublicState get_initial_state() const {
     PartialPublicState state;
@@ -105,11 +103,8 @@ class Game {
  private:
 
   static constexpr int kInitialAction = -1;
-  const int total_num_dice_;
   const Action num_actions_;
   const int num_hands_;
-  const Action liar_call_;
-  const int wild_face_;
 };
 
 }  // namespace kuhn_poker
