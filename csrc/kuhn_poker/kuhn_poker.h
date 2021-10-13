@@ -47,7 +47,7 @@ class Game {
   const std::pair<int, int> community_pot;
   const std::pair<int, int> stack;
 
-  Game(int deck_size, int num_faces)
+  Game(int deck_size)
       : deck_size(deck_size),
         num_actions_(4),
         num_hands_(deck_size),
@@ -110,8 +110,6 @@ class Game {
   const int total_num_dice_;
   const Action num_actions_;
   const int num_hands_;
-  const Action liar_call_;
-  const int wild_face_;
 };
 
 }  // namespace liars_dice
