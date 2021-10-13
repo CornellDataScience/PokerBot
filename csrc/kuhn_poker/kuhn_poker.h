@@ -68,8 +68,6 @@ class Game {
   // Upper bound for how deep game tree could be.
   int max_depth() const { return 3; }
 
-
-
   PartialPublicState get_initial_state() const {
     PartialPublicState state;
     state.last_action = kInitialAction;
@@ -101,15 +99,12 @@ class Game {
 
   std::string action_to_string(Action action) const;
   std::string state_to_string(const PartialPublicState& state) const;
-  std::string action_to_string_short(Action action) const;
-  std::string state_to_string_short(const PartialPublicState& state) const;
 
  private:
 
   static constexpr int kInitialAction = -1;
-  const int total_num_dice_;
   const Action num_actions_;
   const int num_hands_;
 };
 
-}  // namespace liars_dice
+}  // namespace kuhn_poker
