@@ -101,8 +101,6 @@ class Game {
 
   std::string action_to_string(Action action) const;
   std::string state_to_string(const PartialPublicState& state) const;
-  std::string action_to_string_short(Action action) const;
-  std::string state_to_string_short(const PartialPublicState& state) const;
 
  private:
 
@@ -114,4 +112,4 @@ class Game {
   const int wild_face_;
 };
 
-}  // namespace liars_dice
+}  // namespace kuhn_poker
