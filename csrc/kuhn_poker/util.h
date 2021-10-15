@@ -17,76 +17,89 @@
 #include <numeric>
 #include <vector>
 
-namespace liars_dice {
+namespace kuhn_poker
+{
 
-constexpr double kAlmostZero = 1e-200;
+  constexpr double kAlmostZero = 1e-200;
 
-template <class T>
-inline double normalize_probabilities(const std::vector<double>& unnormed_probs,
-                                      T* probs) {
-  const double sum =
-      std::accumulate(unnormed_probs.begin(), unnormed_probs.end(), double{0});
-  assert(sum >= kAlmostZero);
-  for (size_t i = 0; i < unnormed_probs.size(); ++i) {
-    probs[i] = unnormed_probs[i] / sum;
+  template <class T>
+  inline double normalize_probabilities(const std::vector<double> &unnormed_probs,
+                                        T *probs)
+  {
+    const double sum =
+        std::accumulate(unnormed_probs.begin(), unnormed_probs.end(), double{0});
+    assert(sum >= kAlmostZero);
+    for (size_t i = 0; i < unnormed_probs.size(); ++i)
+    {
+      probs[i] = unnormed_probs[i] / sum;
+    }
+    return sum;
   }
-  return sum;
-}
 
-inline double normalize_probabilities(const std::vector<double>& unnormed_probs,
-                                      std::vector<double>* probs) {
-  return normalize_probabilities(unnormed_probs, probs->data());
-}
-
-inline std::vector<double> normalize_probabilities(
-    const std::vector<double>& unnormed_probs) {
-  auto probs = unnormed_probs;
-  normalize_probabilities(unnormed_probs, &probs);
-  return probs;
-}
-
-template <class T>
-inline double normalize_probabilities(const std::vector<double>& unnormed_probs,
-                                      const std::vector<double>& last_probs,
-                                      T* probs) {
-  const double sum =
-      std::accumulate(unnormed_probs.begin(), unnormed_probs.end(), double{0}) +
-      std::accumulate(last_probs.begin(), last_probs.end(), double{0});
-  assert(sum >= kAlmostZero);
-  for (size_t i = 0; i < unnormed_probs.size(); ++i) {
-    probs[i] = (unnormed_probs[i] + last_probs[i]) / sum;
+  inline double normalize_probabilities(const std::vector<double> &unnormed_probs,
+                                        std::vector<double> *probs)
+  {
+    return normalize_probabilities(unnormed_probs, probs->data());
   }
-  return sum;
-}
 
-inline double normalize_probabilities(const std::vector<double>& unnormed_probs,
-                                      const std::vector<double>& last_probs,
-                                      std::vector<double>* probs) {
-  return normalize_probabilities(unnormed_probs, last_probs, probs->data());
-}
-
-template <class T>
-inline void normalize_probabilities_safe(
-    const std::vector<double>& unnormed_probs, double eps, T* probs) {
-  double sum = 0;
-  for (size_t i = 0; i < unnormed_probs.size(); ++i) {
-    sum += unnormed_probs[i] + eps;
+  inline std::vector<double> normalize_probabilities(
+      const std::vector<double> &unnormed_probs)
+  {
+    auto probs = unnormed_probs;
+    normalize_probabilities(unnormed_probs, &probs);
+    return probs;
   }
-  for (size_t i = 0; i < unnormed_probs.size(); ++i) {
-    probs[i] = (unnormed_probs[i] + eps) / sum;
+
+  template <class T>
+  inline double normalize_probabilities(const std::vector<double> &unnormed_probs,
+                                        const std::vector<double> &last_probs,
+                                        T *probs)
+  {
+    const double sum =
+        std::accumulate(unnormed_probs.begin(), unnormed_probs.end(), double{0}) +
+        std::accumulate(last_probs.begin(), last_probs.end(), double{0});
+    assert(sum >= kAlmostZero);
+    for (size_t i = 0; i < unnormed_probs.size(); ++i)
+    {
+      probs[i] = (unnormed_probs[i] + last_probs[i]) / sum;
+    }
+    return sum;
   }
-}
 
-inline std::vector<double> normalize_probabilities_safe(
-    const std::vector<double>& unnormed_probs, double eps) {
-  std::vector<double> probs(unnormed_probs);
-  normalize_probabilities_safe(unnormed_probs, eps, probs.data());
-  return probs;
-}
+  inline double normalize_probabilities(const std::vector<double> &unnormed_probs,
+                                        const std::vector<double> &last_probs,
+                                        std::vector<double> *probs)
+  {
+    return normalize_probabilities(unnormed_probs, last_probs, probs->data());
+  }
 
-template <class T>
-T vector_sum(const std::vector<T>& vector) {
-  return std::accumulate(vector.begin(), vector.end(), T{0});
-}
+  template <class T>
+  inline void normalize_probabilities_safe(
+      const std::vector<double> &unnormed_probs, double eps, T *probs)
+  {
+    double sum = 0;
+    for (size_t i = 0; i < unnormed_probs.size(); ++i)
+    {
+      sum += unnormed_probs[i] + eps;
+    }
+    for (size_t i = 0; i < unnormed_probs.size(); ++i)
+    {
+      probs[i] = (unnormed_probs[i] + eps) / sum;
+    }
+  }
 
-}  // namespace liars_dice
+  inline std::vector<double> normalize_probabilities_safe(
+      const std::vector<double> &unnormed_probs, double eps)
+  {
+    std::vector<double> probs(unnormed_probs);
+    normalize_probabilities_safe(unnormed_probs, eps, probs.data());
+    return probs;
+  }
+
+  template <class T>
+  T vector_sum(const std::vector<T> &vector)
+  {
+    return std::accumulate(vector.begin(), vector.end(), T{0});
+  }
+
+} // namespace kuhn_poker

@@ -20,7 +20,7 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 
-#include "liars_dice.h"
+#include "kuhn_poker.h"
 #include "net_interface.h"
 #include "subgame_solving.h"
 
@@ -140,4 +140,4 @@ std::shared_ptr<IValueNet> create_oracle_value_predictor(
   return std::make_shared<OracleNetSolver>(game, params);
 }
 
-}  // namespace liars_dice
+}  // namespace kuhn_poker
