@@ -19,19 +19,20 @@
 #include "net_interface.h"
 #include "subgame_solving.h"
 
-namespace liars_dice {
+namespace kuhn_poker
+{
 
-// Creates a net that outputs zeros on query and nothing on update.
-std::shared_ptr<IValueNet> create_zero_net(int output_size,
-                                           bool verbose = true);
+    // Creates a net that outputs zeros on query and nothing on update.
+    std::shared_ptr<IValueNet> create_zero_net(int output_size,
+                                               bool verbose = true);
 
-// Creat eval-only connector from the net in the path.
-std::shared_ptr<IValueNet> create_torchscript_net(const std::string& path);
-std::shared_ptr<IValueNet> create_torchscript_net(const std::string& path,
-                                                  const std::string& device);
+    // Creat eval-only connector from the net in the path.
+    std::shared_ptr<IValueNet> create_torchscript_net(const std::string &path);
+    std::shared_ptr<IValueNet> create_torchscript_net(const std::string &path,
+                                                      const std::string &device);
 
-// Create virtual value net that run a solver for each query.
-std::shared_ptr<IValueNet> create_oracle_value_predictor(
-    const Game& game, const SubgameSolvingParams& params);
+    // Create virtual value net that run a solver for each query.
+    std::shared_ptr<IValueNet> create_oracle_value_predictor(
+        const Game &game, const SubgameSolvingParams &params);
 
-}  // namespace kuhn_poker
+} // namespace kuhn_poker
