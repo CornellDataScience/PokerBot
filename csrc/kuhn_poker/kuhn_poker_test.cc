@@ -71,17 +71,10 @@ TEST_F(GameTest, TestRoot) {
   }
 }
 
-TEST_F(GameTest, TestPlayerSequencw) {
+/*TEST_F(GameTest, TestPlayerSequencw) {
   auto state = root;
   for (int i = 0; i < 4 * 6 + 1; ++i) {
     state = game.act(state, i);
     ASSERT_EQ(state.player_id, (i + 1) % 2);
   }
-}
-
-
-TEST_F(GameTest, TestNumMatchesSemiWild) {
-  // Hand: 1 and 6's.
-  auto num_matches = game.num_matches(0 * 6 + 5);
-  ASSERT_EQ(num_matches, (std::vector<int>{2, 1, 1, 1, 1, 1}));
-}
+}*/
