@@ -77,15 +77,19 @@ class Game {
   }
 
   // Get range of possible actions in the state as [min_action, max_action).
+  // 0 = fold
+  // 1 = call
+  // 2 = check
+  // 3 = bet
   std::pair<int,int> get_action_list(
       const PartialPublicState& state) const {
     return state.last_action == kInitialAction || (state.starting_player == 1-state.player_id && state.last_action == 1)
-               ? std::pair<int, int>(1, 3)
-               : std::pair<int, int>(0, 2);
+               ? std::pair<int, int>(2, 3)
+               : std::pair<int, int>(0, 1);
   }
 
   bool is_terminal(const PartialPublicState& state) const {
-    return state.last_action % 2== 0 || (state.last_action == 1 && state.player_id == 1-state.starting_player;
+    return state.last_action <= 1 || (state.last_action == 2 && state.player_id == 1-state.starting_player);
   }
 
   PartialPublicState act(const PartialPublicState& state, Action action) const {
