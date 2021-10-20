@@ -66,7 +66,7 @@ namespace kuhn_poker
       {
         auto new_beliefs = beliefs;
         auto action =
-            child_node_id - node.children_begin + game.get_bid_range(state).first;
+            child_node_id - node.children_begin + game.get_action_list(state).first;
         // Update beliefs.
         // P^{t+1}(hand|action) \propto  P^t(action|hand)P^t(hand) .
         for (int hand = 0; hand < game.num_hands(); ++hand)
@@ -125,7 +125,7 @@ namespace kuhn_poker
         {
           auto child_reaches = node_reaches;
           const int pid = full_node.state.player_id;
-          const int action = game.get_bid_range(full_node.state).first + i;
+          const int action = game.get_action_list(full_node.state).first + i;
           for (int hand = 0; hand < game.num_hands(); ++hand)
           {
             child_reaches[pid][hand] *=
@@ -227,10 +227,10 @@ namespace kuhn_poker
         const auto eps = std::uniform_real_distribution<float>(0, 1)(gen_);
         Action action;
         const auto &state = tree[node_id].state;
-        const auto [action_begin, action_end] = game_.get_bid_range(state);
+        const auto [action_begin, action_end] = game_.get_action_list(state);
         if (state.player_id == br_sampler && eps < random_action_prob_)
         {
-          std::uniform_int_distribution<> dis(action_begin, action_end - 1);
+          std::uniform_int_distribution<> dis(action_begin, action_end);
           action = dis(gen_);
         }
         else
@@ -263,7 +263,7 @@ namespace kuhn_poker
     // strategy.
     for (auto [node_id, action] : path)
     {
-      const auto action_begin = game_.get_bid_range(state_).first;
+      const auto action_begin = game_.get_action_list(state_).first;
       const auto &policy = solver->get_belief_propogation_strategy()[node_id];
       for (int hand = 0; hand < game_.num_hands(); ++hand)
       {
