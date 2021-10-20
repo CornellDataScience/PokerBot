@@ -2,7 +2,11 @@ all: compile
 
 
 compile:
-	mkdir -p build && cd build && cmake ../csrc/liars_dice -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=../cfvpy && make -j
+	rm -r build
+	mkdir build
+	cd build
+	cmake ../csrc/liars_dice -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=../cfvpy
+	make -j
 
 compile_slow:
 	mkdir -p build && cd build && cmake ../csrc/liars_dice -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=../cfvpy && make -j2
