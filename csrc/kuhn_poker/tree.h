@@ -37,8 +37,8 @@ namespace kuhn_poker
     int parent;
     int depth;
 
-    //still should work for kuhn poker lmao
-    int num_children() const { return children_end - children_begin; }
+    //2 for kuhn poker
+    int num_children() const { return 2; }
 
     std::vector<int> get_children() const
     {
