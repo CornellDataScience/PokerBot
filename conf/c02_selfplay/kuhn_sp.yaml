@@ -25,7 +25,7 @@ loss: huber
 min_buffer_to_send: 2500
 max_epochs: 10000
 model:
-  name: Net2
+  name: Net3
   kwargs:
     n_hidden: 256
     n_layers: 2

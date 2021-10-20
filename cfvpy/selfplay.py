@@ -35,7 +35,7 @@ def _build_model(device, env_cfg, cfg, state_dict=None, half=False, jit=False):
     kwargs = cfg.kwargs
     model_class = getattr(cfvpy.models, model_name)
     model = model_class(
-        num_faces=env_cfg.num_faces, num_dice=env_cfg.num_dice, **kwargs
+        deck_size=env_cfg.deck_size, **kwargs
     )
     if state_dict is not None:
         model.load_state_dict(state_dict)
