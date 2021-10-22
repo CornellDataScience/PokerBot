@@ -31,10 +31,11 @@
 
 #include "kuhn_poker.h"
 
-using namespace liars_dice;
+using namespace kuhn_poker;
 
-class GameTest : public ::testing::Test {
- protected:
+class GameTest : public ::testing::Test
+{
+protected:
   const std::pair<int, int> community_pot = std::pair<int, int>(1, 1);
   const std::pair<int, int> stack = std::pair<int, int>(10, 10);
   const int deck_size = 3;
@@ -44,7 +45,8 @@ class GameTest : public ::testing::Test {
   GameTest() : game(deck_size), root(game.get_initial_state()) {}
 };
 
-TEST_F(GameTest, TestRoot) {
+TEST_F(GameTest, TestRoot)
+{
   ASSERT_EQ(root.player_id, 0);
   {
     auto range = game.get_action_list(root);
