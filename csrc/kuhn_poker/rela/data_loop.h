@@ -90,7 +90,7 @@ namespace rela
 
   private:
     std::shared_ptr<IValueNet> connector_;
-    const liars_dice::RecursiveSolvingParams cfg_;
+    const kuhn_poker::RecursiveSolvingParams cfg_;
     const int seed_;
   };
 
