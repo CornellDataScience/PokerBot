@@ -45,7 +45,7 @@ namespace kuhn_poker
   public:
     RlRunner(const RecursiveSolvingParams &params, std::shared_ptr<IValueNet> net,
              int seed)
-        : game_(Game(params.num_dice, params.num_faces)),
+        : game_(Game(params.deck_size)),
           subgame_params_(params.subgame_params),
           random_action_prob_(params.random_action_prob),
           sample_leaf_(params.sample_leaf),
