@@ -31,8 +31,9 @@ namespace kuhn_poker
 
   struct RecursiveSolvingParams
   {
-    int num_dice;
-    int num_faces;
+    // int num_dice;
+    // int num_faces;
+    int deck_size;
     // Probability to explore random action for BR player.
     float random_action_prob = 1.0;
     bool sample_leaf = false;
@@ -67,6 +68,7 @@ namespace kuhn_poker
       //TODO
       // params.num_dice = game.num_dice;
       // params.num_faces = game.num_faces;
+      params.deck_size = game.deck_size;
       return params;
     }
 
