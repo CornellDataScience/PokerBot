@@ -20,7 +20,7 @@
 #include "subgame_solving.h"
 #include "util.h"
 
-using namespace liars_dice;
+using namespace kuhn_poker;
 
 namespace {
 double compute_fp_exploitability(const Game& game,
@@ -46,17 +46,16 @@ double compute_fp_exploitability(const Game& game,
 }  // namespace
 
 TEST(EvaluateTerninalNode, TestSingleDiceOneHotBelief) {
-  const int num_dice = 1;
-  const int num_faces = 6;
-  Game game(num_dice, num_faces);
+  const int deck_size = 3;
+  Game game(deck_size);
 
   std::vector<double> beliefs(game.num_hands());
-  ASSERT_EQ(game.num_hands(), 6);
+  ASSERT_EQ(game.num_hands(), 3);
   for (int ophand = 0; ophand < game.num_hands(); ++ophand) {
     beliefs.assign(game.num_hands(), 0.0);
     beliefs[ophand] = 1;
     for (Action bet = 0; bet < game.num_actions() - 1; ++bet) {
-      const UnpackedAction unpacked_bet = game.unpack_action(bet);
+      //const UnpackedAction unpacked_bet = game.unpack_action(bet);
       auto values = compute_win_probability(game, bet, beliefs);
       for (int myhand = 0; myhand < game.num_hands(); ++myhand) {
         // std::cerr << "myhand=" << myhand << " ophand=" << ophand
