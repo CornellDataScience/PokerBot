@@ -48,9 +48,8 @@ class Game {
   const std::pair<int, int> stack;
   const int starting_player;
 
-  Game(int deck_size, int starting_player)
+  Game(int deck_size)
       : deck_size(deck_size),
-        starting_player_(starting_player)
         num_actions_(4),
         num_hands_(deck_size),
         community_pot_(community_pot),
