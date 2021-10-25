@@ -74,7 +74,7 @@ namespace kuhn_poker
           const auto &node = tree[node_id];
           const auto &state = node.state;
           const auto last_action_player_id = tree[node.parent].state.player_id;
-          const Action last_action = state.last_bid;
+          const Action last_action = state.last_action;
           if (player == last_action_player_id)
           {
             for (size_t hand = 0; hand < num_hands; ++hand)
@@ -130,7 +130,7 @@ namespace kuhn_poker
       buffer[write_index++] = static_cast<float>(state.player_id);
       buffer[write_index++] = static_cast<float>(traverser);
       // Hack: last action is the liar call.
-      assert(state.last_bid != game.num_actions() - 1);
+      assert(state.last_bid != game.num_actions() - 1);  //TODO CHANGE
       for (Action action = 0; action < game.num_actions(); ++action)
       {
         buffer[write_index++] = static_cast<float>(action == state.last_bid);

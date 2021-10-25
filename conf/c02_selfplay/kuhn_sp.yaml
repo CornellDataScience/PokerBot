@@ -6,6 +6,8 @@ decrease_lr_times: 2
 grad_clip: 5.0
 env:
   deck_size: 3
+  community_pot: [1, 1]
+  stack: [10, 10]
   random_action_prob: 0.25
   sample_leaf: true
   subgame_params:
