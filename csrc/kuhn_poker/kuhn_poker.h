@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-namespace liars_dice {
+namespace kuhn_poker {
 
 using Action = int;
 
@@ -44,28 +44,28 @@ struct PartialPublicState {
 class Game {
  public:
   const int deck_size;
-  const std::pair<int, int> community_pot;
-  const std::pair<int, int> stack;
-  const int starting_player;
+  std::pair<int, int> community_pot;
+  std::pair<int, int> stack;  // how much each person has
+  //const int starting_player;
 
-  Game(int deck_size)
+  Game(int deck_size, std::pair<int, int> community_pot, std::pair<int, int> stack)
       : deck_size(deck_size),
         num_actions_(4),
         num_hands_(deck_size),
-        community_pot_(community_pot),
-        stack_(stack) {}
+        community_pot(community_pot),
+        stack(stack) {}
 
   // Number of dice for all the players.
-  int deck_size() const { return deck_size_; }
+  int get_deck_size() const { return deck_size; }
   // Maximum number of distinct actions in every node.
   Action num_actions() const { return num_actions_; }
   // Number of distrinct game states at the beginning of the game. In other
   // words, number of different realization of the chance nodes.
   int num_hands() const { return num_hands_; }
   // Community pot(ante)
-  std::pair<int, int> community_pot() const{ return community_pot_; }
+  std::pair<int, int> get_community_pot() const{ return community_pot; }
   //stack
-  std::pair<int, int> stack() const{ return stack_; }
+  std::pair<int, int> get_stack() const{ return stack; }
   // Upper bound for how deep game tree could be.
   int max_depth() const { return 3; }
 
@@ -110,6 +110,7 @@ class Game {
   static constexpr int kInitialAction = -1;
   const Action num_actions_;
   const int num_hands_;
+
 };
 
 }  // namespace kuhn_poker

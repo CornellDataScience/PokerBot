@@ -19,14 +19,15 @@
 
 namespace kuhn_poker {
 std::string Game::action_to_string(Action action) const {
-  if (action == 0) {
-    return "fold";
-  } else if (action == 1){
-    return "check";
-  } else if (action == 2){
-    return "call";
-  } else if (action == 3){{
-    return "raise";
+    if (action == 0) {
+      return "fold";
+    } else if (action == 1){
+      return "check";
+    } else if (action == 2){
+      return "call";
+    } else if (action == 3){{
+      return "raise";
+    }
   }
 }
 

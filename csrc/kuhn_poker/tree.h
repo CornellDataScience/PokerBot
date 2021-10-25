@@ -31,7 +31,7 @@ namespace kuhn_poker
   // children_end, and parent being indices in the vector.
   struct UnrolledTreeNode
   {
-    PartialPublicState state;
+    kuhn_poker::PartialPublicState state;
     int children_begin;
     int children_end;
     int parent;

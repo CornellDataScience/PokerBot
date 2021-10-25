@@ -34,6 +34,10 @@ namespace kuhn_poker
     // int num_dice;
     // int num_faces;
     int deck_size;
+
+    std::pair<int, int> community_pot;
+    std::pair<int, int> stack;
+    
     // Probability to explore random action for BR player.
     float random_action_prob = 1.0;
     bool sample_leaf = false;
@@ -45,7 +49,7 @@ namespace kuhn_poker
   public:
     RlRunner(const RecursiveSolvingParams &params, std::shared_ptr<IValueNet> net,
              int seed)
-        : game_(Game(params.deck_size)),
+        : game_(Game(params.deck_size, params.community_pot, params.stack)),
           subgame_params_(params.subgame_params),
           random_action_prob_(params.random_action_prob),
           sample_leaf_(params.sample_leaf),
