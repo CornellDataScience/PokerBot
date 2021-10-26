@@ -130,10 +130,10 @@ namespace kuhn_poker
       buffer[write_index++] = static_cast<float>(state.player_id);
       buffer[write_index++] = static_cast<float>(traverser);
       // Hack: last action is the liar call.
-      assert(state.last_bid != game.num_actions() - 1);  //TODO CHANGE
+      assert(state.last_action != game.num_actions() - 1);  //TODO CHANGE
       for (Action action = 0; action < game.num_actions(); ++action)
       {
-        buffer[write_index++] = static_cast<float>(action == state.last_bid);
+        buffer[write_index++] = static_cast<float>(action == state.last_action);
       }
       normalize_probabilities_safe(reaches1, kReachSmoothingEps,
                                    &buffer[write_index]);
@@ -337,7 +337,7 @@ namespace kuhn_poker
       {
         for (auto node_id : terminal_indices)
         {
-          const auto last_bid = tree[tree[node_id].parent].state.last_bid;
+          const auto last_bid = tree[tree[node_id].parent].state.last_action;
           traverser_values[node_id] = compute_expected_terminal_values(
               game, last_bid,
               /*inverse=*/tree[node_id].state.player_id != traverser,
@@ -743,7 +743,7 @@ namespace kuhn_poker
           {
             continue;
           }
-          const auto [start, end] = game.get_bid_range(tree[node].state);
+          const auto [start, end] = game.get_action_list(tree[node].state);
           for (int i = 0; i < game.num_hands(); i++)
           {
             for (int action = start; action < end; ++action)
@@ -768,7 +768,7 @@ namespace kuhn_poker
             continue;
           }
           const auto [action_begin, action_end] =
-              game.get_bid_range(tree[node].state);
+              game.get_action_list(tree[node].state);
           for (int i = 0; i < game.num_hands(); i++)
           {
             for (Action a = action_begin; a < action_end; ++a)
@@ -859,7 +859,7 @@ namespace kuhn_poker
     init_nd(tree.size(), game.num_hands(), game.num_actions(), 0.0, &strategy);
     for (size_t node_id = 0; node_id < tree.size(); ++node_id)
     {
-      int first = game.get_bid_range(tree[node_id].state).first;
+      int first = game.get_action_list(tree[node_id].state).first;
       int last = first + tree[node_id].num_children();
       for (int hand = 0; hand < game.num_hands(); ++hand)
       {
@@ -914,21 +914,28 @@ namespace kuhn_poker
   std::vector<double> compute_win_probability(
       const Game &game, Action bet, const std::vector<double> &beliefs)
   {
+
+    //std::vector<double> values(game.num_hands());
+    //for (int hand_m = 0; hand_m < game.num_hands(); ++hand_m)
+    //{
+    //  for (int hand_o = 0; hand_o < game.num_hands(); ++hand_o)
+    //  {
+    //    if (hand_o != hand_m)
+    //    {
+    //      const float prob_to_win = (op_beliefs[hand_o] > my_beliefs[hand_m]) ? 1 : 0;
+    //      values[hand_o] = prob_to_win;
+    //    }
+    //  }
+    //  //Instead belief states can be represented just with the numeric value of the opponent's hand
+    //  // prob of winning is 1 if you think your card is higher and 0 ow
+    //  return values;
+    //}
     std::vector<double> values(game.num_hands());
-    for (int hand_m = 0; hand_m < game.num_hands(); ++hand_m)
-    {
-      for (int hand_o = 0; hand_o < game.num_hands(); ++hand_o)
-      {
-        if (hand_o != hand_m)
-        {
-          const float prob_to_win = (op_beliefs[hand_o] > my_beliefs[hand_m]) ? 1 : 0;
-          values[hand_o] = prob_to_win;
-        }
-      }
-      //Instead belief states can be represented just with the numeric value of the opponent's hand
-      // prob of winning is 1 if you think your card is higher and 0 ow
-      return values;
+    for (int hand = 0; hand < static_cast<int>(beliefs.size()); ++hand) {
+      const float prob_to_win = 0.5;
+      values[hand] = prob_to_win;
     }
+  }
 
     std::unique_ptr<ISubgameSolver> build_solver(
         const Game &game, const PartialPublicState &root,
@@ -1009,7 +1016,7 @@ namespace kuhn_poker
               op_reach_probabilities, kReachSmoothingEps);
           if (game.is_terminal(state))
           {
-            const auto last_bid = tree[node.parent].state.last_bid;
+            const auto last_bid = tree[node.parent].state.last_action;
             node_values = compute_expected_terminal_values(
                 game, last_bid, /*inverse=*/state.player_id != player, op_beliefs);
           }
@@ -1084,12 +1091,12 @@ namespace kuhn_poker
       state.player_id = query[index++] + 0.5;
       const int traverser = query[index++] + 0.5;
       // TODO(akhti): use constant for initial action.
-      state.last_bid = -1;
+      state.last_action = -1;
       for (Action action = 0; action < game.num_actions(); ++action)
       {
         if (query[index++] > 0.5)
         {
-          state.last_bid = action;
+          state.last_action = action;
         }
       }
       std::vector<std::vector<double>> beliefs(2);
@@ -1123,7 +1130,7 @@ namespace kuhn_poker
         if (node.num_children() == 0)
         {
           assert(game.is_terminal(state));
-          const auto last_bid = tree[node.parent].state.last_bid;
+          const auto last_bid = tree[node.parent].state.last_action;
           values[node_id] = compute_expected_terminal_values(
               game, last_bid, /*inverse=*/state.player_id != player,
               op_reach_probabilities[node_id]);
