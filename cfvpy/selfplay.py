@@ -71,7 +71,7 @@ class CFVExp:
             ckpt_path,
         )
 
-        self.num_actions = cfg.env.num_dice * cfg.env.num_faces * 2 + 1
+        self.num_actions = 4#cfg.env.num_dice * cfg.env.num_faces * 2 + 1
 
         self.net = _build_model(self.device, self.cfg.env, self.cfg.model)
         if self.is_master:
