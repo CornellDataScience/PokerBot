@@ -174,6 +174,8 @@ PYBIND11_MODULE(rela, m)
     py::class_<kuhn_poker::RecursiveSolvingParams>(m, "RecursiveSolvingParams")
         .def(py::init<>())
         .def_readwrite("deck_size", &kuhn_poker::RecursiveSolvingParams::deck_size)
+	.def_readwrite("community_pot", &kuhn_poker::RecursiveSolvingParams::community_pot)
+	.def_readwrite("stack", &kuhn_poker::RecursiveSolvingParams::stack)
         .def_readwrite("random_action_prob",
                        &kuhn_poker::RecursiveSolvingParams::random_action_prob)
         .def_readwrite("sample_leaf",
