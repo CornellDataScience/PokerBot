@@ -70,7 +70,7 @@ void report_game_stats(const Game &game, const TreeStrategy &strategy)
   for (size_t i = 0; i < std::min<size_t>(20, stats.node_reach.size()); ++i)
   {
     std::cout << std::setw(5) << i << " "
-              << game.state_to_string_short(full_tree[i].state) << "\t"
+              << game.state_to_string(full_tree[i].state) << "\t"
               << std::setprecision(4) << stats.node_reach[i];
     for (auto p : {0, 1})
     {
@@ -228,8 +228,11 @@ struct ParallerSampledStrategyComputor
 
 int main(int argc, char *argv[])
 {
-  int num_dice = 1;
-  int num_faces = 4;
+  //int num_dice = 1;
+  //int num_faces = 4;
+  int deck_size = 3;
+  std::pair<int, int> community_pot(1,1);
+  std::pair<int, int> stack(10, 10);
   int subgame_iters = 1024;
   int mdp_depth = -1;
   int num_repeats = -1;
@@ -247,17 +250,17 @@ int main(int argc, char *argv[])
     for (int i = 1; i < argc; i++)
     {
       std::string arg = argv[i];
-      if (arg == "--num_dice")
-      {
-        assert(i + 1 < argc);
-        num_dice = std::stoi(argv[++i]);
-      }
-      else if (arg == "--num_faces")
-      {
-        assert(i + 1 < argc);
-        num_faces = std::stoi(argv[++i]);
-      }
-      else if (arg == "--subgame_iters")
+      //if (arg == "--num_dice")
+      //{
+      //  assert(i + 1 < argc);
+      //  num_dice = std::stoi(argv[++i]);
+      //}
+      //else if (arg == "--num_faces")
+      //{
+      //  assert(i + 1 < argc);
+      //  num_faces = std::stoi(argv[++i]);
+      //}
+      if (arg == "--subgame_iters")
       {
         assert(i + 1 < argc);
         subgame_iters = std::stoi(argv[++i]);
@@ -329,11 +332,11 @@ int main(int argc, char *argv[])
       }
     }
   }
-  assert(num_dice != -1);
-  assert(num_faces != -1);
+  //assert(num_dice != -1);
+  //assert(num_faces != -1);
 
-  const Game game(num_dice, num_faces);
-  std::cout << "num_dice=" << num_dice << " num_faces=" << num_faces << "\n";
+  const Game game(deck_size, community_pot, stack);
+  std::cout << "deck_size=" << deck_size << "\n";
   const auto full_tree = unroll_tree(game);
   std::cout << "Tree of depth " << get_depth(full_tree) << " has "
             << full_tree.size() << " nodes\n";
@@ -389,8 +392,8 @@ int main(int argc, char *argv[])
     assert(mdp_depth > 0);
     std::shared_ptr<IValueNet> net =
         net_path == "zero"
-            ? liars_dice::create_zero_net(game.num_hands(), false)
-            : liars_dice::create_torchscript_net(net_path);
+            ? kuhn_poker::create_zero_net(game.num_hands(), false)
+            : kuhn_poker::create_torchscript_net(net_path);
 
     std::cout << "##############################################\n";
     std::cout << "##### Recursive solving                      #\n";
@@ -410,12 +413,12 @@ int main(int argc, char *argv[])
           {
             oracle_net_params.num_iters = eval_oracle_values_iters;
           }
-          return liars_dice::create_oracle_value_predictor(game,
+          return kuhn_poker::create_oracle_value_predictor(game,
                                                            oracle_net_params);
         }
         else
         {
-          return liars_dice::create_torchscript_net(net_path, "cpu");
+          return kuhn_poker::create_torchscript_net(net_path, "cpu");
         }
       };
 
