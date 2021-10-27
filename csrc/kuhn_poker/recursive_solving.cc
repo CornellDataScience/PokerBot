@@ -177,31 +177,41 @@ namespace kuhn_poker
     state_ = game_.get_initial_state();
     beliefs_[0].assign(game_.num_hands(), 1.0 / game_.num_hands());
     beliefs_[1].assign(game_.num_hands(), 1.0 / game_.num_hands());
-    // std::cout << "state: " << game_.state_to_string(state_) << "\n";
+    //std::cout << "state: " << game_.state_to_string(state_) << "\n" << std::flush;
+    int step_count = 0;
     while (!game_.is_terminal(state_))
     {
+      //std::cout << "Game has not terminated at step " << step_count << "\n" << std::flush;
       auto solver = build_solver(game_, state_, beliefs_, subgame_params_, net_);
+      //std::cout << "CFR solver built\n" << std::flush;
 
       const int act_iteration =
           std::uniform_int_distribution<>(0, subgame_params_.num_iters)(gen_);
+      //std::cout << "act_iteraction complete\n" << std::flush;
       for (int iter = 0; iter < act_iteration; ++iter)
       {
         solver->step(/*traverser=*/iter % 2);
       }
+      //std::cout << "Solver stepped for act iterations\n" << std::flush;
       // Sample a new state to explore.
       sample_state(solver.get());
+      //std::cout << "Solver sampled state\n" << std::flush;
       for (int iter = act_iteration; iter < subgame_params_.num_iters; ++iter)
       {
         solver->step(/*traverser=*/iter % 2);
       }
+      //std::cout << "Solver stepped for act iterations\n" << std::flush;
 
       // Collect the values at the top of the tree.
       solver->update_value_network();
+      //std::cout << "solver updates value network\n" << std::flush;
+      step_count = step_count + 1;
     }
   }
 
   void RlRunner::sample_state(const ISubgameSolver *solver)
   {
+    //std::cout << "Sampling state: " <<  sample_leaf_ << "\n" << std::flush;
     if (sample_leaf_)
     {
       sample_state_to_leaf(solver);
@@ -222,6 +232,7 @@ namespace kuhn_poker
       const auto br_sampler = std::uniform_int_distribution<>(0, 1)(gen_);
       const auto &strategy = solver->get_sampling_strategy();
       auto sampling_beliefs = beliefs_;
+      //std::cout << "Line 235: Right before while loop....\n" << std::flush;
       while (tree[node_id].num_children())
       {
         const auto eps = std::uniform_real_distribution<float>(0, 1)(gen_);
@@ -230,7 +241,7 @@ namespace kuhn_poker
         const auto [action_begin, action_end] = game_.get_action_list(state);
         if (state.player_id == br_sampler && eps < random_action_prob_)
         {
-          std::uniform_int_distribution<> dis(action_begin, action_end);
+          std::uniform_int_distribution<> dis(action_begin, action_end-1);
           action = dis(gen_);
         }
         else
@@ -241,8 +252,13 @@ namespace kuhn_poker
           const std::vector<double> &policy = strategy[node_id][hand];
           std::discrete_distribution<> action_dis(policy.begin(), policy.end());
           action = action_dis(gen_);
+	  //std::cout << "Action: " << action << " Begin and end: [" << action_begin << ", " << action_end << "]\n" << std::flush;
           assert(action >= action_begin && action < action_end);
         }
+
+	//std::cout << "Action: " << action << " Begin and end: [" << action_begin << ", " << action_end << "]\n" << std::flush;
+
+	//std::cout << "Line 259: Before we update our beliefs\n" << std::flush;
         // Update beliefs.
         // Policy[hand, action] := P(action | hand).
         const auto &policy = strategy[node_id];
@@ -252,11 +268,19 @@ namespace kuhn_poker
           // Assuming that the policy has zeros outside of the range.
           sampling_beliefs[state.player_id][hand] *= policy[hand][action];
         }
+	//std::cout << "Line 269: After we update beliefs\n" << std::flush;
         normalize_beliefs_inplace(sampling_beliefs[state.player_id]);
+	//std::cout << "Line 271: Normalized beliefs inplace\n" << std::flush;
         path.emplace_back(node_id, action);
-        node_id = tree[node_id].children_begin + action - action_begin;
+	//std::cout << "Line 273: Emplace back node on path?\n" << std::flush;
+	//std::cout << "Line 275: children begin: " << tree[node_id].children_begin << "\n" << std::flush;
+	//std::cout << "Line 276: Get node id " << node_id << " with tree size: " << tree.size() << "\n" << std::flush;
+	node_id = tree[node_id].children_begin + action - action_begin;
+	//std::cout << "Line 279: New node id: " << node_id << "\n" << std::flush;
       }
     }
+    //std::cout << "Line 282: After while loop\n" << std::flush;
+    //std::cout << "Line 283: Before loop over path\n" << std::flush;
 
     // We do another pass over the path to compute beliefs accroding to
     // `get_belief_propogation_strategy` that could differ from the sampling
@@ -274,6 +298,7 @@ namespace kuhn_poker
       int child_node_id = tree[node_id].children_begin + action - action_begin;
       state_ = tree[child_node_id].state;
     }
+    //std::cout << "Line 291: Sampling complete!\n";
   }
 
   void RlRunner::sample_state_single(const ISubgameSolver *solver)
