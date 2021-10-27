@@ -135,7 +135,7 @@ namespace kuhn_poker
       buffer[write_index++] = static_cast<float>(state.player_id);
       buffer[write_index++] = static_cast<float>(traverser);
       // Hack: last action is the liar call.
-      assert(state.last_action != game.num_actions() - 1);  //TODO CHANGE
+      // assert(state.last_action != game.num_actions() - 1);  //TODO CHANGE
       for (Action action = 0; action < game.num_actions(); ++action)
       {
         buffer[write_index++] = static_cast<float>(action == state.last_action);
