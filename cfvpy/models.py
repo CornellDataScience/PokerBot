@@ -65,7 +65,7 @@ def input_size(deck_size):
     
 
 def output_size(deck_size):
-    return deck_size*(deck_size-1)
+    return deck_size #deck_size*(deck_size-1)
 #def output_size(num_faces, num_dice):
 #    return num_faces ** num_dice
 

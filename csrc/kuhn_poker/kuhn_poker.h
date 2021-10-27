@@ -84,18 +84,22 @@ class Game {
   // 3 = bet
   std::pair<int,int> get_action_list(
       const PartialPublicState& state) const {
-    return state.last_action == kInitialAction || (state.starting_player == 1-state.player_id && state.last_action == 1)
-               ? std::pair<int, int>(2, 3)
-               : std::pair<int, int>(0, 1);
+	  if (!is_terminal(state)) {
+		  return state.last_action == kInitialAction || (state.starting_player == 1-state.player_id && state.last_action == 1)
+			  ? std::pair<int, int>(2, 4)
+			  : std::pair<int, int>(0, 2);
+	  } else {
+		  return std::pair<int, int>(2,2);
+	  }
   }
 
   bool is_terminal(const PartialPublicState& state) const {
-    return state.last_action <= 1 || (state.last_action == 2 && state.player_id == 1-state.starting_player);
+    return ((state.last_action == 0) || ((state.last_action == 2) && (state.player_id == 1-state.starting_player))) || state.last_action == 1;
   }
 
   PartialPublicState act(const PartialPublicState& state, Action action) const {
     const auto action_list = get_action_list(state);
-    assert(action == action_list.first || action == action_list.second);
+    assert (action == action_list.first || action == (action_list.second-1));
     PartialPublicState new_state;
     new_state.last_action = action;
     new_state.player_id = 1 - state.player_id;
