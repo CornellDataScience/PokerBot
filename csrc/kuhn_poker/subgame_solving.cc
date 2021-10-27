@@ -20,6 +20,7 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 #include <torch/torch.h>
 
@@ -96,16 +97,20 @@ namespace kuhn_poker
         const Game &game, Action last_bid, bool inverse,
         std::vector<double> &op_reach_probabilities)
     {
+      //std::cout << "Started expected terminal value\n" << std::flush;
       auto values = compute_win_probability(game, last_bid, op_reach_probabilities);
+      //std::cout << "Computed win probability with size " << values.size() << "\n" << std::flush;
       // Need to convert the probabilities to the payoff the traverser. Note,
       // the probabilities are true probabilities iff op_beliefs sum to 1.
       const auto belief_sum = vector_sum(op_reach_probabilities);
+      //std::cout << "Computed belief sum: " << belief_sum << "\n" << std::flush;
       // Payoff: (probability(win) * 1.0 + probability(lose) * (-1.0).
       for (double &v : values)
       {
         // v <- ((v / belief_sum) * 2 - 1) * belief_sum;
         v = v * 2 - belief_sum;
       }
+      //std::cout << "Modified values correctly\n" << std::flush;
       if (inverse)
       {
         for (double &v : values)
@@ -279,9 +284,13 @@ namespace kuhn_poker
       // precomputed.
       void precompute_all_leaf_values(int traverser)
       {
+	//std::cout << "Starting leaf node computation\n" << std::flush;
         query_value_net(traverser);
+	//std::cout << "Queried value net\n" << std::flush;
         populate_leaf_values();
+	//std::cout << "Populated leaf values\n" << std::flush;
         precompute_terminal_leaves_values(traverser);
+	//std::cout << "Compute terminal leaf values\n" << std::flush;
       }
 
     protected:
@@ -335,13 +344,19 @@ namespace kuhn_poker
       // Populate traverser_values for terminal nodes.
       void precompute_terminal_leaves_values(int traverser)
       {
+	//std::cout << "Line 343: Starting terminal leaf computation " << terminal_indices << " \n" << std::flush;
+	//std::cout << "Tree size " << tree.size() << "\n" << std::flush;
         for (auto node_id : terminal_indices)
         {
+	  //std::cout << "Node ID: " << node_id << ", parent id: " << tree[node_id].parent << "\n" << std::flush;
+	  //std::cout << "2tree parent last action: " << game.state_to_string(tree[tree[node_id].parent].state) << "\n" << std::flush;
           const auto last_bid = tree[tree[node_id].parent].state.last_action;
+	  //std::cout << "Got the prior bid\n" << std::flush;
           traverser_values[node_id] = compute_expected_terminal_values(
               game, last_bid,
               /*inverse=*/tree[node_id].state.player_id != traverser,
               reach_probabilities[1 - traverser][node_id]);
+	  //std::cout << "Computed traverser values\n" << std::flush;
         }
       }
 
@@ -373,8 +388,11 @@ namespace kuhn_poker
           const Pair<std::vector<double>> &initial_beliefs,
           std::vector<double> *values)
       {
+	//std::cout << "Line 377: Starting BR computation\n" << std::flush;
         precompute_reaches(oponent_strategy, initial_beliefs);
+	//std::cout << "Line 379: Computed reached\n" << std::flush;
         precompute_all_leaf_values(traverser);
+	//std::cout << "Line 381: Computed leaf value\n" << std::flush;
         for (size_t public_node = tree.size(); public_node-- > 0;)
         {
           const auto &node = tree[public_node];
@@ -501,6 +519,7 @@ namespace kuhn_poker
         const TreeStrategy &br_strategy =
             br_solver.compute_br(traverser, average_strategies, initial_beliefs,
                                  &root_values[traverser]);
+	//std::cout << "BR strategy computed\n" << std::flush;
 
         // How many updates done for the valeus and strategy of the traverser
         // assuming alternating pattern.
@@ -516,8 +535,10 @@ namespace kuhn_poker
                 alpha;
           }
         }
+	//std::cout << "Root means computed\n" << std::flush;
         update_sum_strat(/*public_node=*/0, traverser, br_strategy,
                          initial_beliefs[traverser]);
+	//std::cout << "Sum strat updated\n" << std::flush;
         for (size_t node = 0; node < tree.size(); ++node)
         {
           if (!tree[node].num_children() ||
@@ -547,6 +568,7 @@ namespace kuhn_poker
             }
           }
         }
+	//std::cout << "Tree traversal(?)\n" << std::flush;
         ++num_strategies;
       }
 
@@ -634,8 +656,11 @@ namespace kuhn_poker
       // Sets traverser_values[node] to the EVs of last_strategies for traverser.
       void update_regrets(int traverser)
       {
+	//std::cout << "Updating regrets in traverse\n" << std::flush;
         precompute_reaches(last_strategies, initial_beliefs);
+	//std::cout << "Line 647: Pre-computed reached\n" << std::flush;
         precompute_all_leaf_values(traverser);
+	//std::cout << "Line 649: Computed all leave values\n" << std::flush;
 
         for (size_t public_node = tree.size(); public_node-- > 0;)
         {
@@ -681,12 +706,15 @@ namespace kuhn_poker
             }
           }
         }
+	//std::cout << "The nasty loop is done!\n" << std::flush;
       }
 
       void step(int traverser) override
       {
+	//std::cout << "Entering step\n" << std::flush;
         update_regrets(traverser);
         root_values[traverser] = traverser_values[0];
+	//std::cout << "Updated regreats and values\n" << std::flush;
         {
           const double alpha = params.linear_update
                                    ? 2. / (num_steps[traverser] + 2)
@@ -699,6 +727,7 @@ namespace kuhn_poker
                 alpha;
           }
         }
+	//std::cout << "Updated mean values\n" << std::flush;
 
         double pos_discount = 1;
         double neg_discount = 1;
@@ -757,9 +786,12 @@ namespace kuhn_poker
           }
         }
 
+	//std::cout << "Computed strats and normalized\n" << std::flush;
+
         compute_reach_probabilities(tree, last_strategies,
                                     initial_beliefs[traverser], traverser,
                                     &reach_probabilities_buffer);
+	//std::cout << "Computed reach\n" << std::flush;
         for (size_t node = 0; node < tree.size(); ++node)
         {
           if (!tree[node].num_children() ||
@@ -789,6 +821,7 @@ namespace kuhn_poker
                                     &average_strategies[node][i]);
           }
         }
+	//std::cout << "Computed regrets and sum strat\n" << std::flush;
 
         ++num_steps[traverser];
       }
@@ -931,10 +964,12 @@ namespace kuhn_poker
     //  return values;
     //}
     std::vector<double> values(game.num_hands());
+    //std::cout << "Values has size: " << values.size() << " while there are " << game.num_hands() << " hands and the PBS has size " << beliefs.size() << "\n" << std::flush;
     for (int hand = 0; hand < static_cast<int>(beliefs.size()); ++hand) {
       const float prob_to_win = 0.5;
       values[hand] = prob_to_win;
     }
+    return values;
   }
 
     std::unique_ptr<ISubgameSolver> build_solver(
@@ -944,6 +979,7 @@ namespace kuhn_poker
     {
       if (params.use_cfr)
       {
+	//std::cout << "Running CFR\n" << std::flush;
         return std::make_unique<CFR>(game, root, net, beliefs, params);
       }
       else
