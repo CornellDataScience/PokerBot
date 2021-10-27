@@ -53,20 +53,27 @@ def build_mlp(
     return nn.Sequential(*vals_net)
 
 
-def input_size(num_faces, num_dice):
-    return 1 + 1 + (2 * num_faces * num_dice + 1) + 2 * output_size(num_faces, num_dice)
+#def input_size(num_faces, num_dice):
+    #return 1 + 1 + (2 * num_faces * num_dice + 1) + 2 * output_size(num_faces, num_dice)
+def input_size(deck_size):
+    return (
+        1 + # player index
+        1 + # pot
+        2*output_size(deck_size) + # PBS of each player
+        4 # actions
+    )
+    
 
-
-def output_size(num_faces, num_dice):
-    return num_faces ** num_dice
-
-def input_size(num_faces, num_dice):
-    return 1 + 1 + (2 * num_faces * num_dice + 1) + 2 * output_size(num_faces, num_dice)
+def output_size(deck_size):
+    return deck_size #deck_size*(deck_size-1)
+#def output_size(num_faces, num_dice):
+#    return num_faces ** num_dice
 
 def input_size_kuhn(deck_size):
     return deck_size * (deck_size-1)
 def output_size_kuhn(deck_size):
     return deck_size * (deck_size-1)
+
 class Net2(nn.Module):
     def __init__(
         self,
@@ -111,7 +118,7 @@ class Net3(nn.Module):
     ):
         super().__init__()
 
-        n_in = input_size(num_faces, num_dice)
+        n_in = input_size(deck_size)
         self.body = build_mlp(
             n_in=n_in,
             n_hidden=n_hidden,
@@ -120,7 +127,7 @@ class Net3(nn.Module):
             dropout=dropout,
         )
         self.output = nn.Linear(
-            n_hidden if n_layers > 0 else n_in, output_size_kuhn(deck_size)
+            n_hidden if n_layers > 0 else n_in, output_size(deck_size)
         )
         # Make initial predictions closer to 0.
         with torch.no_grad():

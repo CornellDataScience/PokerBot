@@ -60,6 +60,8 @@ int main(int argc, char *argv[])
   // int num_dice = 1;
   // int num_faces = 4;
   int deck_size = 3;
+  std::pair<int, int> community_pot(1, 1);
+  std::pair<int, int> stack(10, 10);
   int fp_iters = 1024;
   int mdp_depth = 2;
   int num_threads = 10;
@@ -121,10 +123,10 @@ int main(int argc, char *argv[])
   assert(deck_size != -1);
   assert(mdp_depth != -1);
 
-  const Game game(deck_size);
+  const Game game(deck_size, community_pot, stack);
   assert(mdp_depth > 0);
   assert(!net_path.empty());
-  std::cout << "deck_size=" << deck_size < < < < "\n";
+  std::cout << "deck_size=" << deck_size << "\n";
   {
     const auto full_tree = unroll_tree(game);
     std::cout << "Tree of depth " << get_depth(full_tree) << " has "
@@ -151,6 +153,8 @@ int main(int argc, char *argv[])
 
   RecursiveSolvingParams cfg;
   cfg.deck_size = deck_size;
+  cfg.community_pot = community_pot;
+  cfg.stack = stack;
   cfg.subgame_params.num_iters = fp_iters;
   cfg.subgame_params.linear_update = true;
   cfg.subgame_params.optimistic = false;

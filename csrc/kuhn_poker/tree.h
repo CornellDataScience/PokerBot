@@ -38,7 +38,8 @@ namespace kuhn_poker
     int depth;
 
     //2 for kuhn poker
-    int num_children() const { return 2; }
+    int num_children() const { return children_end - children_begin; }
+    // Coulnd't this be zero depending on the state??
 
     std::vector<int> get_children() const
     {
@@ -70,6 +71,7 @@ namespace kuhn_poker
       auto &parent = nodes[node_id];
       parent.children_begin = nodes.size();
       parent.children_end = parent.children_begin + end - start;
+      //std::cout << "Begin and End of children: [" << parent.children_begin << " ," << parent.children_end << "]" << std::flush;
       for (int i = start; i < end; ++i)
       {
         auto state = game.act(parent.state, i);

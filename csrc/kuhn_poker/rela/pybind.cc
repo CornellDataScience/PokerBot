@@ -48,7 +48,7 @@ namespace
                                  const std::string &model_path)
     {
         py::gil_scoped_release release;
-        kuhn_poker::Game game(params.deck_size);
+        kuhn_poker::Game game(params.deck_size, params.community_pot, params.stack);
         std::shared_ptr<IValueNet> net =
             kuhn_poker::create_torchscript_net(model_path);
         const auto tree_strategy =
@@ -61,7 +61,7 @@ namespace
                                 const std::string &model_path)
     {
         py::gil_scoped_release release;
-        kuhn_poker::Game game(params.deck_size);
+        kuhn_poker::Game game(params.deck_size, params.community_pot, params.stack);
         std::shared_ptr<IValueNet> net =
             kuhn_poker::create_torchscript_net(model_path);
         const auto net_strategy =
@@ -90,7 +90,7 @@ namespace
     float compute_exploitability_no_net(kuhn_poker::RecursiveSolvingParams params)
     {
         py::gil_scoped_release release;
-        kuhn_poker::Game game(params.deck_size);
+        kuhn_poker::Game game(params.deck_size, params.community_pot, params.stack);
         auto fp = kuhn_poker::build_solver(game, game.get_initial_state(),
                                            kuhn_poker::get_initial_beliefs(game),
                                            params.subgame_params, /*net=*/nullptr);
@@ -174,6 +174,8 @@ PYBIND11_MODULE(rela, m)
     py::class_<kuhn_poker::RecursiveSolvingParams>(m, "RecursiveSolvingParams")
         .def(py::init<>())
         .def_readwrite("deck_size", &kuhn_poker::RecursiveSolvingParams::deck_size)
+	.def_readwrite("community_pot", &kuhn_poker::RecursiveSolvingParams::community_pot)
+	.def_readwrite("stack", &kuhn_poker::RecursiveSolvingParams::stack)
         .def_readwrite("random_action_prob",
                        &kuhn_poker::RecursiveSolvingParams::random_action_prob)
         .def_readwrite("sample_leaf",
