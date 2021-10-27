@@ -59,7 +59,7 @@ def input_size(deck_size):
     return (
         1 + # player index
         1 + # pot
-        2*deck_size + # PBS of each player
+        2*output_size(deck_size) + # PBS of each player
         4 # actions
     )
     
