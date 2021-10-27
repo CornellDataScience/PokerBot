@@ -127,7 +127,7 @@ class Net3(nn.Module):
             dropout=dropout,
         )
         self.output = nn.Linear(
-            n_hidden if n_layers > 0 else n_in, output_size_kuhn(deck_size)
+            n_hidden if n_layers > 0 else n_in, output_size(deck_size)
         )
         # Make initial predictions closer to 0.
         with torch.no_grad():
