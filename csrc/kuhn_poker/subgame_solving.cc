@@ -94,7 +94,8 @@ namespace kuhn_poker
     }
 
     std::vector<double> compute_expected_terminal_values(
-        const Game &game, Action last_bid, bool inverse,
+        const Game &game, const PartialPublicState &state,
+	Action last_bid, bool inverse,
         std::vector<double> &op_reach_probabilities)
     {
       //std::cout << "Started expected terminal value\n" << std::flush;
@@ -109,6 +110,11 @@ namespace kuhn_poker
       {
         // v <- ((v / belief_sum) * 2 - 1) * belief_sum;
         v = v * 2 - belief_sum;
+      }
+
+      for (double &v: values)
+      {
+	v = v * (state.community_pot.first + state.community_pot.second);
       }
       //std::cout << "Modified values correctly\n" << std::flush;
       if (inverse)
@@ -353,7 +359,7 @@ namespace kuhn_poker
           const auto last_bid = tree[tree[node_id].parent].state.last_action;
 	  //std::cout << "Got the prior bid\n" << std::flush;
           traverser_values[node_id] = compute_expected_terminal_values(
-              game, last_bid,
+              game, tree[tree[node_id].parent].state, last_bid,
               /*inverse=*/tree[node_id].state.player_id != traverser,
               reach_probabilities[1 - traverser][node_id]);
 	  //std::cout << "Computed traverser values\n" << std::flush;
@@ -948,25 +954,15 @@ namespace kuhn_poker
       const Game &game, Action bet, const std::vector<double> &beliefs)
   {
 
-    //std::vector<double> values(game.num_hands());
-    //for (int hand_m = 0; hand_m < game.num_hands(); ++hand_m)
-    //{
-    //  for (int hand_o = 0; hand_o < game.num_hands(); ++hand_o)
-    //  {
-    //    if (hand_o != hand_m)
-    //    {
-    //      const float prob_to_win = (op_beliefs[hand_o] > my_beliefs[hand_m]) ? 1 : 0;
-    //      values[hand_o] = prob_to_win;
-    //    }
-    //  }
-    //  //Instead belief states can be represented just with the numeric value of the opponent's hand
-    //  // prob of winning is 1 if you think your card is higher and 0 ow
-    //  return values;
-    //}
     std::vector<double> values(game.num_hands());
     //std::cout << "Values has size: " << values.size() << " while there are " << game.num_hands() << " hands and the PBS has size " << beliefs.size() << "\n" << std::flush;
     for (int hand = 0; hand < static_cast<int>(beliefs.size()); ++hand) {
-      const float prob_to_win = 0.5;
+      double prob_to_win;
+      if (bet == 0){
+          prob_to_win = 1.0;
+      } else {
+	  prob_to_win = hand / (values.size() -1);
+      }
       values[hand] = prob_to_win;
     }
     return values;
@@ -1054,7 +1050,7 @@ namespace kuhn_poker
           {
             const auto last_bid = tree[node.parent].state.last_action;
             node_values = compute_expected_terminal_values(
-                game, last_bid, /*inverse=*/state.player_id != player, op_beliefs);
+                game, tree[node.parent].state, last_bid, /*inverse=*/state.player_id != player, op_beliefs);
           }
           else
           {
@@ -1168,7 +1164,7 @@ namespace kuhn_poker
           assert(game.is_terminal(state));
           const auto last_bid = tree[node.parent].state.last_action;
           values[node_id] = compute_expected_terminal_values(
-              game, last_bid, /*inverse=*/state.player_id != player,
+              game, tree[node.parent].state, last_bid, /*inverse=*/state.player_id != player,
               op_reach_probabilities[node_id]);
         }
         else if (state.player_id == player)
