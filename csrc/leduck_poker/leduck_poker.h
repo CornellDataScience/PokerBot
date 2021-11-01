@@ -124,7 +124,7 @@ namespace leduck_poker
 
     bool is_terminal(const PartialPublicState &state) const
     {
-      return ((state.last_action == 0) || (state.river && state.last_action == 1) }} (state.river && state.last_action == 2 && state.starting_player == 1 - state.player_id);
+      return ((state.last_action == 0) || (state.river && state.last_action == 1) || (state.river && state.last_action == 2 && state.starting_player == 1 - state.player_id);
     }
 
     PartialPublicState act(const PartialPublicState &state, Action action) const
