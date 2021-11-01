@@ -26,7 +26,7 @@ std::string Game::action_to_string(Action action) const {
     } else if (action == 2){
       return "call";
     } else if (action == 3){{
-      return "raise";
+      return "bet";
     }
   }
 }
