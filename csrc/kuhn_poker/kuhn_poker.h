@@ -97,7 +97,7 @@ namespace kuhn_poker
     {
       if (!is_terminal(state))
       {
-        return state.last_action == kInitialAction || (state.last_action == 1)
+        return state.last_action == kInitialAction || (state.last_action == 2)
                    ? std::pair<int, int>(2, 4)
                    : std::pair<int, int>(0, 2);
       }
@@ -109,7 +109,7 @@ namespace kuhn_poker
 
     bool is_terminal(const PartialPublicState &state) const
     {
-      return ((state.last_action == 0) || ((state.last_action == 1) && (state.player_id == 1 - state.starting_player))) || state.last_action == 2;
+      return ((state.last_action == 0) || ((state.last_action == 2) && (state.player_id == 1 - state.starting_player))) || state.last_action == 1;
     }
 
     PartialPublicState act(const PartialPublicState &state, Action action) const
