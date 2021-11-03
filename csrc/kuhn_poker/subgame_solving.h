@@ -112,7 +112,8 @@ namespace kuhn_poker
   // Computes probabilities to win the game for each possible hand assuming that
   // the oponents hands are distributed according to beliefs.
   std::vector<double> compute_win_probability(const Game &game, Action bet,
-                                              const std::vector<double> &beliefs);
+                                              const std::vector<double> &op_beliefs,
+                                              const std::vector<double> &my_beliefs);
 
   inline Pair<std::vector<double>> get_initial_beliefs(const Game &game)
   {
