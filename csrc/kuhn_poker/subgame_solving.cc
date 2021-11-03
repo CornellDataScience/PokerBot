@@ -94,12 +94,22 @@ namespace kuhn_poker
     }
 
     std::vector<double> compute_expected_terminal_values(
-        const Game &game, Action last_bid, bool inverse,
-        std::vector<double> &op_reach_probabilities)
+        const Game &game, const PartialPublicState &state,
+        Action last_bid, bool inverse,
+        std::vector<double> &op_reach_probabilities, std::vector<double> &my_reach_probabilities)
     {
       //std::cout << "Started expected terminal value\n" << std::flush;
-      auto values = compute_win_probability(game, last_bid, op_reach_probabilities);
-      //std::cout << "Computed win probability with size " << values.size() << "\n" << std::flush;
+      auto values = compute_win_probability(game, last_bid, op_reach_probabilities, my_reach_probabilities);
+
+      // std::cout << "Computed win probability with size " << values.size() << "\n"
+      //           << std::flush;
+
+      // for (double &v : values)
+      // {
+      //   std::cout << v << "\n"
+      //             << std::flush;
+      // }
+
       // Need to convert the probabilities to the payoff the traverser. Note,
       // the probabilities are true probabilities iff op_beliefs sum to 1.
       const auto belief_sum = vector_sum(op_reach_probabilities);
@@ -110,6 +120,11 @@ namespace kuhn_poker
         // v <- ((v / belief_sum) * 2 - 1) * belief_sum;
         v = v * 2 - belief_sum;
       }
+
+      for (double &v : values)
+      {
+        v = v * std::min(state.community_pot.first, state.community_pot.second);
+      }
       //std::cout << "Modified values correctly\n" << std::flush;
       if (inverse)
       {
@@ -118,6 +133,11 @@ namespace kuhn_poker
           v *= -1.0;
         }
       }
+      // for (double &v : values)
+      // {
+      //   std::cout << std::setprecision(15) << v << "\n"
+      //             << std::flush;
+      // }
       return values;
     }
 
@@ -284,13 +304,13 @@ namespace kuhn_poker
       // precomputed.
       void precompute_all_leaf_values(int traverser)
       {
-	//std::cout << "Starting leaf node computation\n" << std::flush;
+        //std::cout << "Starting leaf node computation\n" << std::flush;
         query_value_net(traverser);
-	//std::cout << "Queried value net\n" << std::flush;
+        //std::cout << "Queried value net\n" << std::flush;
         populate_leaf_values();
-	//std::cout << "Populated leaf values\n" << std::flush;
+        //std::cout << "Populated leaf values\n" << std::flush;
         precompute_terminal_leaves_values(traverser);
-	//std::cout << "Compute terminal leaf values\n" << std::flush;
+        //std::cout << "Compute terminal leaf values\n" << std::flush;
       }
 
     protected:
@@ -344,19 +364,19 @@ namespace kuhn_poker
       // Populate traverser_values for terminal nodes.
       void precompute_terminal_leaves_values(int traverser)
       {
-	//std::cout << "Line 343: Starting terminal leaf computation " << terminal_indices << " \n" << std::flush;
-	//std::cout << "Tree size " << tree.size() << "\n" << std::flush;
+        //std::cout << "Line 343: Starting terminal leaf computation " << terminal_indices << " \n" << std::flush;
+        //std::cout << "Tree size " << tree.size() << "\n" << std::flush;
         for (auto node_id : terminal_indices)
         {
-	  //std::cout << "Node ID: " << node_id << ", parent id: " << tree[node_id].parent << "\n" << std::flush;
-	  //std::cout << "2tree parent last action: " << game.state_to_string(tree[tree[node_id].parent].state) << "\n" << std::flush;
+          //std::cout << "Node ID: " << node_id << ", parent id: " << tree[node_id].parent << "\n" << std::flush;
+          //std::cout << "2tree parent last action: " << game.state_to_string(tree[tree[node_id].parent].state) << "\n" << std::flush;
           const auto last_bid = tree[tree[node_id].parent].state.last_action;
-	  //std::cout << "Got the prior bid\n" << std::flush;
+          //std::cout << "Got the prior bid\n" << std::flush;
           traverser_values[node_id] = compute_expected_terminal_values(
-              game, last_bid,
+              game, tree[tree[node_id].parent].state, last_bid,
               /*inverse=*/tree[node_id].state.player_id != traverser,
-              reach_probabilities[1 - traverser][node_id]);
-	  //std::cout << "Computed traverser values\n" << std::flush;
+              reach_probabilities[1 - traverser][node_id], reach_probabilities[traverser][node_id]);
+          //std::cout << "Computed traverser values\n" << std::flush;
         }
       }
 
@@ -388,11 +408,11 @@ namespace kuhn_poker
           const Pair<std::vector<double>> &initial_beliefs,
           std::vector<double> *values)
       {
-	//std::cout << "Line 377: Starting BR computation\n" << std::flush;
+        //std::cout << "Line 377: Starting BR computation\n" << std::flush;
         precompute_reaches(oponent_strategy, initial_beliefs);
-	//std::cout << "Line 379: Computed reached\n" << std::flush;
+        //std::cout << "Line 379: Computed reached\n" << std::flush;
         precompute_all_leaf_values(traverser);
-	//std::cout << "Line 381: Computed leaf value\n" << std::flush;
+        //std::cout << "Line 381: Computed leaf value\n" << std::flush;
         for (size_t public_node = tree.size(); public_node-- > 0;)
         {
           const auto &node = tree[public_node];
@@ -519,7 +539,7 @@ namespace kuhn_poker
         const TreeStrategy &br_strategy =
             br_solver.compute_br(traverser, average_strategies, initial_beliefs,
                                  &root_values[traverser]);
-	//std::cout << "BR strategy computed\n" << std::flush;
+        //std::cout << "BR strategy computed\n" << std::flush;
 
         // How many updates done for the valeus and strategy of the traverser
         // assuming alternating pattern.
@@ -535,10 +555,10 @@ namespace kuhn_poker
                 alpha;
           }
         }
-	//std::cout << "Root means computed\n" << std::flush;
+        //std::cout << "Root means computed\n" << std::flush;
         update_sum_strat(/*public_node=*/0, traverser, br_strategy,
                          initial_beliefs[traverser]);
-	//std::cout << "Sum strat updated\n" << std::flush;
+        //std::cout << "Sum strat updated\n" << std::flush;
         for (size_t node = 0; node < tree.size(); ++node)
         {
           if (!tree[node].num_children() ||
@@ -568,7 +588,7 @@ namespace kuhn_poker
             }
           }
         }
-	//std::cout << "Tree traversal(?)\n" << std::flush;
+        //std::cout << "Tree traversal(?)\n" << std::flush;
         ++num_strategies;
       }
 
@@ -656,11 +676,11 @@ namespace kuhn_poker
       // Sets traverser_values[node] to the EVs of last_strategies for traverser.
       void update_regrets(int traverser)
       {
-	//std::cout << "Updating regrets in traverse\n" << std::flush;
+        //std::cout << "Updating regrets in traverse\n" << std::flush;
         precompute_reaches(last_strategies, initial_beliefs);
-	//std::cout << "Line 647: Pre-computed reached\n" << std::flush;
+        //std::cout << "Line 647: Pre-computed reached\n" << std::flush;
         precompute_all_leaf_values(traverser);
-	//std::cout << "Line 649: Computed all leave values\n" << std::flush;
+        //std::cout << "Line 649: Computed all leave values\n" << std::flush;
 
         for (size_t public_node = tree.size(); public_node-- > 0;)
         {
@@ -706,15 +726,15 @@ namespace kuhn_poker
             }
           }
         }
-	//std::cout << "The nasty loop is done!\n" << std::flush;
+        //std::cout << "The nasty loop is done!\n" << std::flush;
       }
 
       void step(int traverser) override
       {
-	//std::cout << "Entering step\n" << std::flush;
+        //std::cout << "Entering step\n" << std::flush;
         update_regrets(traverser);
         root_values[traverser] = traverser_values[0];
-	//std::cout << "Updated regreats and values\n" << std::flush;
+        //std::cout << "Updated regreats and values\n" << std::flush;
         {
           const double alpha = params.linear_update
                                    ? 2. / (num_steps[traverser] + 2)
@@ -727,7 +747,7 @@ namespace kuhn_poker
                 alpha;
           }
         }
-	//std::cout << "Updated mean values\n" << std::flush;
+        //std::cout << "Updated mean values\n" << std::flush;
 
         double pos_discount = 1;
         double neg_discount = 1;
@@ -786,12 +806,12 @@ namespace kuhn_poker
           }
         }
 
-	//std::cout << "Computed strats and normalized\n" << std::flush;
+        //std::cout << "Computed strats and normalized\n" << std::flush;
 
         compute_reach_probabilities(tree, last_strategies,
                                     initial_beliefs[traverser], traverser,
                                     &reach_probabilities_buffer);
-	//std::cout << "Computed reach\n" << std::flush;
+        //std::cout << "Computed reach\n" << std::flush;
         for (size_t node = 0; node < tree.size(); ++node)
         {
           if (!tree[node].num_children() ||
@@ -821,7 +841,7 @@ namespace kuhn_poker
                                     &average_strategies[node][i]);
           }
         }
-	//std::cout << "Computed regrets and sum strat\n" << std::flush;
+        //std::cout << "Computed regrets and sum strat\n" << std::flush;
 
         ++num_steps[traverser];
       }
@@ -945,352 +965,370 @@ namespace kuhn_poker
 
   //TODO
   std::vector<double> compute_win_probability(
-      const Game &game, Action bet, const std::vector<double> &beliefs)
+      const Game &game, Action bet, const std::vector<double> &op_beliefs, const std::vector<double> &my_beliefs)
   {
 
-    //std::vector<double> values(game.num_hands());
-    //for (int hand_m = 0; hand_m < game.num_hands(); ++hand_m)
-    //{
-    //  for (int hand_o = 0; hand_o < game.num_hands(); ++hand_o)
-    //  {
-    //    if (hand_o != hand_m)
-    //    {
-    //      const float prob_to_win = (op_beliefs[hand_o] > my_beliefs[hand_m]) ? 1 : 0;
-    //      values[hand_o] = prob_to_win;
-    //    }
-    //  }
-    //  //Instead belief states can be represented just with the numeric value of the opponent's hand
-    //  // prob of winning is 1 if you think your card is higher and 0 ow
-    //  return values;
-    //}
     std::vector<double> values(game.num_hands());
-    //std::cout << "Values has size: " << values.size() << " while there are " << game.num_hands() << " hands and the PBS has size " << beliefs.size() << "\n" << std::flush;
-    for (int hand = 0; hand < static_cast<int>(beliefs.size()); ++hand) {
-      const float prob_to_win = 0.5;
-      values[hand] = prob_to_win;
-    }
-    return values;
-  }
 
-    std::unique_ptr<ISubgameSolver> build_solver(
-        const Game &game, const PartialPublicState &root,
-        const Pair<std::vector<double>> &beliefs,
-        const SubgameSolvingParams &params, std::shared_ptr<IValueNet> net)
+    // std::cout << "Values has size: " << values.size() << " while there are " << game.num_hands() << " hands and the PBS has size " << op_beliefs.size() << "\n"
+    //          << std::flush;
+    for (int hand = 0; hand < static_cast<int>(op_beliefs.size()); ++hand)
     {
-      if (params.use_cfr)
+      double prob_to_win;
+      if (bet == 0)
       {
-	//std::cout << "Running CFR\n" << std::flush;
-        return std::make_unique<CFR>(game, root, net, beliefs, params);
+        prob_to_win = 1.0;
       }
       else
       {
-        return std::make_unique<FP>(game, root, net, beliefs, params);
+        prob_to_win = (values.size() - hand - 1.0) / (values.size() - 1.0) * op_beliefs[hand];
+
+        // for (int my_hand = hand + 1; my_hand < static_cast<int>(my_beliefs.size()); ++my_hand)
+        // {
+        //   prob_to_win = prob_to_win + my_beliefs[my_hand];
+        // }
       }
+      values[hand] = prob_to_win;
     }
+    // std::cout << "op J " << values[0] << "\n"
+    //           << "op Q " << values[1] << "\n"
+    //           << "op K " << values[2] << "\n"
+    //           << std::flush;
+    return values;
+  }
 
-    std::array<double, 2> compute_exploitability2(const Game &game,
-                                                  const TreeStrategy &strategy)
+  std::unique_ptr<ISubgameSolver> build_solver(
+      const Game &game, const PartialPublicState &root,
+      const Pair<std::vector<double>> &beliefs,
+      const SubgameSolvingParams &params, std::shared_ptr<IValueNet> net)
+  {
+    if (params.use_cfr)
     {
-      const auto root = game.get_initial_state();
-      const auto tree = unroll_tree(game, root, /*max_depth=*/1000000);
-      Pair<std::vector<double>> beliefs;
-      for (auto i : {0, 1})
-      {
-        beliefs[i].assign(game.num_hands(), 1. / game.num_hands());
-      }
-      BRSolver solver(game, tree, /*value_net=*/nullptr);
-      std::vector<double> values0, values1;
-      solver.compute_br(/*traverser=*/0, strategy, beliefs, &values0);
-      solver.compute_br(/*traverser=*/1, strategy, beliefs, &values1);
-      return {vector_sum(values0) / values0.size(),
-              vector_sum(values1) / values1.size()};
+      //std::cout << "Running CFR\n" << std::flush;
+      return std::make_unique<CFR>(game, root, net, beliefs, params);
     }
-
-    double compute_exploitability(const Game &game, const TreeStrategy &strategy)
+    else
     {
-      auto exploitabilites = compute_exploitability2(game, strategy);
-      return (exploitabilites[0] + exploitabilites[1]) / 2.0;
+      return std::make_unique<FP>(game, root, net, beliefs, params);
     }
+  }
 
-    TreeStrategyStats compute_stategy_stats(const Game &game,
-                                            const TreeStrategy &strategy)
+  std::array<double, 2> compute_exploitability2(const Game &game,
+                                                const TreeStrategy &strategy)
+  {
+    const auto root = game.get_initial_state();
+    const auto tree = unroll_tree(game, root, /*max_depth=*/1000000);
+    Pair<std::vector<double>> beliefs;
+    for (auto i : {0, 1})
     {
-      const auto uniform_beliefs = get_initial_beliefs(game).at(0);
-      const auto tree = unroll_tree(game);
-      TreeStrategyStats stats;
-      stats.tree = tree;
-
-      auto &reach_probabilities = stats.reach_probabilities;
-      init_nd(tree.size(), game.num_hands(), 0.0, &reach_probabilities[0]);
-      init_nd(tree.size(), game.num_hands(), 0.0, &reach_probabilities[1]);
-      auto &tree_values = stats.values;
-      init_nd(tree.size(), game.num_hands(), 0.0, &tree_values[0]);
-      init_nd(tree.size(), game.num_hands(), 0.0, &tree_values[1]);
-      stats.node_reach.resize(tree.size());
-      stats.node_values[0].resize(tree.size());
-      stats.node_values[1].resize(tree.size());
-      for (int player : {0, 1})
-      {
-        compute_reach_probabilities(tree, strategy, uniform_beliefs, player,
-                                    &reach_probabilities[player]);
-      }
-      for (size_t node_id = tree.size(); node_id-- > 0;)
-      {
-        stats.node_reach[node_id] = vector_sum(reach_probabilities[0][node_id]) *
-                                    vector_sum(reach_probabilities[1][node_id]);
-      }
-      for (int player : {0, 1})
-      {
-        for (size_t node_id = tree.size(); node_id-- > 0;)
-        {
-          const auto &node = tree[node_id];
-          const auto &state = node.state;
-          std::vector<double> &node_values = tree_values[player][node_id];
-          const auto op_reach_probabilities =
-              reach_probabilities[1 - player][node_id];
-          std::vector<double> op_beliefs = normalize_probabilities_safe(
-              op_reach_probabilities, kReachSmoothingEps);
-          if (game.is_terminal(state))
-          {
-            const auto last_bid = tree[node.parent].state.last_action;
-            node_values = compute_expected_terminal_values(
-                game, last_bid, /*inverse=*/state.player_id != player, op_beliefs);
-          }
-          else
-          {
-            assert(node.num_children() > 0);
-          }
-          if (state.player_id == player)
-          {
-            for (int hand = 0; hand < game.num_hands(); ++hand)
-            {
-              for (auto [child_node_id, action] : ChildrenActionIt(node, game))
-              {
-                tree_values[player][node_id][hand] +=
-                    strategy[node_id][hand][action] *
-                    tree_values[player][child_node_id][hand];
-              }
-            }
-          }
-          else
-          {
-            for (auto [child_node_id, action] : ChildrenActionIt(node, game))
-            {
-              double action_prob = 0;
-              // Iterating over op's hands.
-              for (int hand = 0; hand < game.num_hands(); ++hand)
-              {
-                action_prob += strategy[node_id][hand][action] * op_beliefs[hand];
-              }
-              // Iterating over traverser's hands.
-              for (int hand = 0; hand < game.num_hands(); ++hand)
-              {
-                tree_values[player][node_id][hand] +=
-                    action_prob * tree_values[player][child_node_id][hand];
-              }
-            }
-          }
-        }
-      }
-      for (int player : {0, 1})
-      {
-        for (size_t node_id = tree.size(); node_id-- > 0;)
-        {
-          auto beliefs = normalize_probabilities_safe(
-              reach_probabilities[player][node_id], 1e-6);
-          for (int hand = 0; hand < game.num_hands(); ++hand)
-          {
-            stats.node_values[player][node_id] +=
-                beliefs[hand] * tree_values[player][node_id][hand];
-          }
-        }
-      }
-
-      return stats;
+      beliefs[i].assign(game.num_hands(), 1. / game.num_hands());
     }
+    BRSolver solver(game, tree, /*value_net=*/nullptr);
+    std::vector<double> values0, values1;
+    solver.compute_br(/*traverser=*/0, strategy, beliefs, &values0);
+    solver.compute_br(/*traverser=*/1, strategy, beliefs, &values1);
+    return {vector_sum(values0) / values0.size(),
+            vector_sum(values1) / values1.size()};
+  }
 
-    std::vector<float> get_query(const Game &game, int traverser,
-                                 const PartialPublicState &state,
-                                 const std::vector<double> &reaches1,
-                                 const std::vector<double> &reaches2)
+  double compute_exploitability(const Game &game, const TreeStrategy &strategy)
+  {
+    auto exploitabilites = compute_exploitability2(game, strategy);
+    return (exploitabilites[0] + exploitabilites[1]) / 2.0;
+  }
+
+  TreeStrategyStats compute_stategy_stats(const Game &game,
+                                          const TreeStrategy &strategy)
+  {
+    const auto uniform_beliefs = get_initial_beliefs(game).at(0);
+    const auto tree = unroll_tree(game);
+    TreeStrategyStats stats;
+    stats.tree = tree;
+
+    auto &reach_probabilities = stats.reach_probabilities;
+    init_nd(tree.size(), game.num_hands(), 0.0, &reach_probabilities[0]);
+    init_nd(tree.size(), game.num_hands(), 0.0, &reach_probabilities[1]);
+    auto &tree_values = stats.values;
+    init_nd(tree.size(), game.num_hands(), 0.0, &tree_values[0]);
+    init_nd(tree.size(), game.num_hands(), 0.0, &tree_values[1]);
+    stats.node_reach.resize(tree.size());
+    stats.node_values[0].resize(tree.size());
+    stats.node_values[1].resize(tree.size());
+    for (int player : {0, 1})
     {
-      std::vector<float> query(get_query_size(game));
-      write_query_to(game, traverser, state, reaches1, reaches2, query.data());
-      return query;
+      compute_reach_probabilities(tree, strategy, uniform_beliefs, player,
+                                  &reach_probabilities[player]);
     }
-
-    std::tuple<int, PartialPublicState, std::vector<double>, std::vector<double>>
-    deserialize_query(const Game &game, const float *query)
+    for (size_t node_id = tree.size(); node_id-- > 0;)
     {
-      int index = 0;
-      PartialPublicState state;
-      state.player_id = query[index++] + 0.5;
-      const int traverser = query[index++] + 0.5;
-      // TODO(akhti): use constant for initial action.
-      state.last_action = -1;
-      for (Action action = 0; action < game.num_actions(); ++action)
-      {
-        if (query[index++] > 0.5)
-        {
-          state.last_action = action;
-        }
-      }
-      std::vector<std::vector<double>> beliefs(2);
-      for (int i = 0; i < game.num_hands(); ++i)
-        beliefs[0].push_back(query[index++]);
-      for (int i = 0; i < game.num_hands(); ++i)
-        beliefs[1].push_back(query[index++]);
-      return std::make_tuple(traverser, state, beliefs[0], beliefs[1]);
+      stats.node_reach[node_id] = vector_sum(reach_probabilities[0][node_id]) *
+                                  vector_sum(reach_probabilities[1][node_id]);
     }
-
-    std::vector<double> compute_ev(const Game &game, const TreeStrategy &strategy1,
-                                   const TreeStrategy &strategy2)
+    for (int player : {0, 1})
     {
-      auto tree = unroll_tree(game);
-      assert(tree.size() == strategy1.size());
-      assert(tree.size() == strategy2.size());
-      std::vector<std::vector<double>> op_reach_probabilities;
-      init_nd(tree.size(), game.num_hands(), 0.0, &op_reach_probabilities);
-      // values[node][hand] :=
-      // sum_{z, node->z} sum_{op_hand}
-      //  P(op_hand) pi^{-i}(z|op_hand) pi^{i}(node -> z|hand) U_i(hand, op_hand, z)
-      std::vector<std::vector<double>> values(tree.size());
-      const int player = 0;
-      compute_reach_probabilities(tree, strategy2, get_initial_beliefs(game)[0],
-                                  1 - player, &op_reach_probabilities);
-
       for (size_t node_id = tree.size(); node_id-- > 0;)
       {
         const auto &node = tree[node_id];
         const auto &state = node.state;
-        if (node.num_children() == 0)
+        std::vector<double> &node_values = tree_values[player][node_id];
+
+        const auto op_reach_probabilities =
+            reach_probabilities[1 - player][node_id];
+        std::vector<double> op_beliefs = normalize_probabilities_safe(
+            op_reach_probabilities, kReachSmoothingEps);
+
+        const auto my_reach_probabilities =
+            reach_probabilities[player][node_id];
+        std::vector<double> my_beliefs = normalize_probabilities_safe(
+            my_reach_probabilities, kReachSmoothingEps);
+
+        if (game.is_terminal(state))
         {
-          assert(game.is_terminal(state));
           const auto last_bid = tree[node.parent].state.last_action;
-          values[node_id] = compute_expected_terminal_values(
-              game, last_bid, /*inverse=*/state.player_id != player,
-              op_reach_probabilities[node_id]);
+          node_values = compute_expected_terminal_values(
+              game, tree[node.parent].state, last_bid, /*inverse=*/state.player_id != player, op_beliefs, my_beliefs);
         }
-        else if (state.player_id == player)
+        else
         {
-          values[node_id].resize(game.num_hands());
-          for (auto [child_node_id, action] : ChildrenActionIt(node, game))
+          assert(node.num_children() > 0);
+        }
+        if (state.player_id == player)
+        {
+          for (int hand = 0; hand < game.num_hands(); ++hand)
           {
-            for (int hand = 0; hand < game.num_hands(); ++hand)
+            for (auto [child_node_id, action] : ChildrenActionIt(node, game))
             {
-              values[node_id][hand] +=
-                  strategy1[node_id][hand][action] * values[child_node_id][hand];
+              tree_values[player][node_id][hand] +=
+                  strategy[node_id][hand][action] *
+                  tree_values[player][child_node_id][hand];
             }
           }
         }
         else
         {
-          values[node_id].resize(game.num_hands());
-          for (auto child_node_id : ChildrenIt(node))
+          for (auto [child_node_id, action] : ChildrenActionIt(node, game))
           {
+            double action_prob = 0;
+            // Iterating over op's hands.
             for (int hand = 0; hand < game.num_hands(); ++hand)
             {
-              values[node_id][hand] += values[child_node_id][hand];
+              action_prob += strategy[node_id][hand][action] * op_beliefs[hand];
+            }
+            // Iterating over traverser's hands.
+            for (int hand = 0; hand < game.num_hands(); ++hand)
+            {
+              tree_values[player][node_id][hand] +=
+                  action_prob * tree_values[player][child_node_id][hand];
             }
           }
         }
       }
-      return values[0];
     }
-
-    Pair<double> compute_ev2(const Game &game, const TreeStrategy &strategy1,
-                             const TreeStrategy &strategy2)
+    for (int player : {0, 1})
     {
-      auto ev1 =
-          vector_sum(compute_ev(game, strategy1, strategy2)) / game.num_hands();
-      auto ev2 =
-          -vector_sum(compute_ev(game, strategy2, strategy1)) / game.num_hands();
-      return std::array<double, 2>{ev1, ev2};
-    }
-
-    std::vector<std::vector<double>> compute_immediate_regrets(
-        const Game &game, const std::vector<TreeStrategy> &strategies)
-    {
-      const Tree tree = unroll_tree(game);
-      assert(!strategies.empty());
-      TreeStrategy regrets;
-      init_nd(tree.size(), game.num_hands(), game.num_actions(), 0.0, &regrets);
-      PartialTreeTraverser tree_traverser(game, tree, nullptr);
-      const std::vector<double> initial_beliefs = get_initial_beliefs(game)[0];
-      for (size_t strategy_id = 0; strategy_id < strategies.size(); ++strategy_id)
+      for (size_t node_id = tree.size(); node_id-- > 0;)
       {
-        const auto &last_strategies = strategies[strategy_id];
-        tree_traverser.precompute_reaches(last_strategies, initial_beliefs, 0);
-        tree_traverser.precompute_reaches(last_strategies, initial_beliefs, 1);
-        for (int traverser : {0, 1})
+        auto beliefs = normalize_probabilities_safe(
+            reach_probabilities[player][node_id], 1e-6);
+        for (int hand = 0; hand < game.num_hands(); ++hand)
         {
-          tree_traverser.precompute_all_leaf_values(traverser);
-          for (size_t public_node = tree.size(); public_node-- > 0;)
+          stats.node_values[player][node_id] +=
+              beliefs[hand] * tree_values[player][node_id][hand];
+        }
+      }
+    }
+
+    return stats;
+  }
+
+  std::vector<float> get_query(const Game &game, int traverser,
+                               const PartialPublicState &state,
+                               const std::vector<double> &reaches1,
+                               const std::vector<double> &reaches2)
+  {
+    std::vector<float> query(get_query_size(game));
+    write_query_to(game, traverser, state, reaches1, reaches2, query.data());
+    return query;
+  }
+
+  std::tuple<int, PartialPublicState, std::vector<double>, std::vector<double>>
+  deserialize_query(const Game &game, const float *query)
+  {
+    int index = 0;
+    PartialPublicState state;
+    state.player_id = query[index++] + 0.5;
+    const int traverser = query[index++] + 0.5;
+    // TODO(akhti): use constant for initial action.
+    state.last_action = -1;
+    for (Action action = 0; action < game.num_actions(); ++action)
+    {
+      if (query[index++] > 0.5)
+      {
+        state.last_action = action;
+      }
+    }
+    std::vector<std::vector<double>> beliefs(2);
+    for (int i = 0; i < game.num_hands(); ++i)
+      beliefs[0].push_back(query[index++]);
+    for (int i = 0; i < game.num_hands(); ++i)
+      beliefs[1].push_back(query[index++]);
+    return std::make_tuple(traverser, state, beliefs[0], beliefs[1]);
+  }
+
+  std::vector<double> compute_ev(const Game &game, const TreeStrategy &strategy1,
+                                 const TreeStrategy &strategy2)
+  {
+    auto tree = unroll_tree(game);
+    assert(tree.size() == strategy1.size());
+    assert(tree.size() == strategy2.size());
+    std::vector<std::vector<double>> op_reach_probabilities;
+    init_nd(tree.size(), game.num_hands(), 0.0, &op_reach_probabilities);
+
+    std::vector<std::vector<double>> my_reach_probabilities;
+    init_nd(tree.size(), game.num_hands(), 0.0, &my_reach_probabilities);
+    // values[node][hand] :=
+    // sum_{z, node->z} sum_{op_hand}
+    //  P(op_hand) pi^{-i}(z|op_hand) pi^{i}(node -> z|hand) U_i(hand, op_hand, z)
+    std::vector<std::vector<double>> values(tree.size());
+    const int player = 0;
+    compute_reach_probabilities(tree, strategy2, get_initial_beliefs(game)[0],
+                                1 - player, &op_reach_probabilities);
+
+    compute_reach_probabilities(tree, strategy1, get_initial_beliefs(game)[0],
+                                player, &my_reach_probabilities);
+
+    for (size_t node_id = tree.size(); node_id-- > 0;)
+    {
+      const auto &node = tree[node_id];
+      const auto &state = node.state;
+      if (node.num_children() == 0)
+      {
+        assert(game.is_terminal(state));
+        const auto last_bid = tree[node.parent].state.last_action;
+        values[node_id] = compute_expected_terminal_values(
+            game, tree[node.parent].state, last_bid, /*inverse=*/state.player_id != player,
+            op_reach_probabilities[node_id], my_reach_probabilities[node_id]);
+      }
+      else if (state.player_id == player)
+      {
+        values[node_id].resize(game.num_hands());
+        for (auto [child_node_id, action] : ChildrenActionIt(node, game))
+        {
+          for (int hand = 0; hand < game.num_hands(); ++hand)
           {
-            const auto &node = tree[public_node];
-            if (!node.num_children())
+            values[node_id][hand] +=
+                strategy1[node_id][hand][action] * values[child_node_id][hand];
+          }
+        }
+      }
+      else
+      {
+        values[node_id].resize(game.num_hands());
+        for (auto child_node_id : ChildrenIt(node))
+        {
+          for (int hand = 0; hand < game.num_hands(); ++hand)
+          {
+            values[node_id][hand] += values[child_node_id][hand];
+          }
+        }
+      }
+    }
+    return values[0];
+  }
+
+  Pair<double> compute_ev2(const Game &game, const TreeStrategy &strategy1,
+                           const TreeStrategy &strategy2)
+  {
+    auto ev1 =
+        vector_sum(compute_ev(game, strategy1, strategy2)) / game.num_hands();
+    auto ev2 =
+        -vector_sum(compute_ev(game, strategy2, strategy1)) / game.num_hands();
+    return std::array<double, 2>{ev1, ev2};
+  }
+
+  std::vector<std::vector<double>> compute_immediate_regrets(
+      const Game &game, const std::vector<TreeStrategy> &strategies)
+  {
+    const Tree tree = unroll_tree(game);
+    assert(!strategies.empty());
+    TreeStrategy regrets;
+    init_nd(tree.size(), game.num_hands(), game.num_actions(), 0.0, &regrets);
+    PartialTreeTraverser tree_traverser(game, tree, nullptr);
+    const std::vector<double> initial_beliefs = get_initial_beliefs(game)[0];
+    for (size_t strategy_id = 0; strategy_id < strategies.size(); ++strategy_id)
+    {
+      const auto &last_strategies = strategies[strategy_id];
+      tree_traverser.precompute_reaches(last_strategies, initial_beliefs, 0);
+      tree_traverser.precompute_reaches(last_strategies, initial_beliefs, 1);
+      for (int traverser : {0, 1})
+      {
+        tree_traverser.precompute_all_leaf_values(traverser);
+        for (size_t public_node = tree.size(); public_node-- > 0;)
+        {
+          const auto &node = tree[public_node];
+          if (!node.num_children())
+          {
+            // All leaf values are set by precompute_all_leaf_values.
+            continue;
+          }
+          const auto &state = node.state;
+          auto &value = tree_traverser.traverser_values[public_node];
+          value.assign(value.size(), 0.0);
+          if (state.player_id == traverser)
+          {
+            for (auto [child_node, action] : ChildrenActionIt(node, game))
             {
-              // All leaf values are set by precompute_all_leaf_values.
-              continue;
+              const auto &action_value =
+                  tree_traverser.traverser_values[child_node];
+              for (int hand = 0; hand < game.num_hands(); ++hand)
+              {
+                regrets[public_node][hand][action] += action_value[hand];
+                value[hand] += action_value[hand] *
+                               last_strategies[public_node][hand][action];
+              }
             }
-            const auto &state = node.state;
-            auto &value = tree_traverser.traverser_values[public_node];
-            value.assign(value.size(), 0.0);
-            if (state.player_id == traverser)
+            for (int hand = 0; hand < game.num_hands(); ++hand)
             {
               for (auto [child_node, action] : ChildrenActionIt(node, game))
               {
-                const auto &action_value =
-                    tree_traverser.traverser_values[child_node];
-                for (int hand = 0; hand < game.num_hands(); ++hand)
-                {
-                  regrets[public_node][hand][action] += action_value[hand];
-                  value[hand] += action_value[hand] *
-                                 last_strategies[public_node][hand][action];
-                }
-              }
-              for (int hand = 0; hand < game.num_hands(); ++hand)
-              {
-                for (auto [child_node, action] : ChildrenActionIt(node, game))
-                {
-                  regrets[public_node][hand][action] -= value[hand];
-                }
+                regrets[public_node][hand][action] -= value[hand];
               }
             }
-            else
+          }
+          else
+          {
+            assert(state.player_id == 1 - traverser);
+            for (auto child_node : ChildrenIt(node))
             {
-              assert(state.player_id == 1 - traverser);
-              for (auto child_node : ChildrenIt(node))
+              const auto &action_value =
+                  tree_traverser.traverser_values[child_node];
+              for (int hand = 0; hand < game.num_hands(); ++hand)
               {
-                const auto &action_value =
-                    tree_traverser.traverser_values[child_node];
-                for (int hand = 0; hand < game.num_hands(); ++hand)
-                {
-                  value[hand] += action_value[hand];
-                }
+                value[hand] += action_value[hand];
               }
             }
           }
         }
       }
-      std::vector<std::vector<double>> immediate_regrets;
-      init_nd(tree.size(), game.num_hands(), 0.0, &immediate_regrets);
-      for (size_t public_node = tree.size(); public_node-- > 0;)
-      {
-        const auto &node = tree[public_node];
-        if (!node.num_children())
-        {
-          continue;
-        }
-        for (int hand = 0; hand < game.num_hands(); ++hand)
-        {
-          immediate_regrets[public_node][hand] =
-              *std::max_element(regrets[public_node][hand].begin(),
-                                regrets[public_node][hand].end()) /
-              strategies.size();
-        }
-      }
-      return immediate_regrets;
     }
+    std::vector<std::vector<double>> immediate_regrets;
+    init_nd(tree.size(), game.num_hands(), 0.0, &immediate_regrets);
+    for (size_t public_node = tree.size(); public_node-- > 0;)
+    {
+      const auto &node = tree[public_node];
+      if (!node.num_children())
+      {
+        continue;
+      }
+      for (int hand = 0; hand < game.num_hands(); ++hand)
+      {
+        immediate_regrets[public_node][hand] =
+            *std::max_element(regrets[public_node][hand].begin(),
+                              regrets[public_node][hand].end()) /
+            strategies.size();
+      }
+    }
+    return immediate_regrets;
+  }
 
-  } // namespace kuhn_poker
+} // namespace kuhn_poker
