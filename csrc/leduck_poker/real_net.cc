@@ -20,11 +20,11 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 
-#include "kuhn_poker.h"
+#include "leduck_poker.h"
 #include "net_interface.h"
 #include "subgame_solving.h"
 
-namespace kuhn_poker
+namespace leduck_poker
 {
   namespace
   {
@@ -163,4 +163,4 @@ namespace kuhn_poker
     return std::make_shared<OracleNetSolver>(game, params);
   }
 
-} // namespace kuhn_poker
+} // namespace leduck_poker

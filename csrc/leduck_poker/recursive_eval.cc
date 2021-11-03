@@ -23,7 +23,7 @@
 #include "subgame_solving.h"
 #include "util.h"
 
-using namespace kuhn_poker;
+using namespace leduck_poker;
 
 void report_regrets(const Game &game,
                     const std::vector<TreeStrategy> &strategy_list,
@@ -392,8 +392,8 @@ int main(int argc, char *argv[])
     assert(mdp_depth > 0);
     std::shared_ptr<IValueNet> net =
         net_path == "zero"
-            ? kuhn_poker::create_zero_net(game.num_hands(), false)
-            : kuhn_poker::create_torchscript_net(net_path);
+            ? leduck_poker::create_zero_net(game.num_hands(), false)
+            : leduck_poker::create_torchscript_net(net_path);
 
     std::cout << "##############################################\n";
     std::cout << "##### Recursive solving                      #\n";
@@ -413,12 +413,12 @@ int main(int argc, char *argv[])
           {
             oracle_net_params.num_iters = eval_oracle_values_iters;
           }
-          return kuhn_poker::create_oracle_value_predictor(game,
+          return leduck_poker::create_oracle_value_predictor(game,
                                                            oracle_net_params);
         }
         else
         {
-          return kuhn_poker::create_torchscript_net(net_path, "cpu");
+          return leduck_poker::create_torchscript_net(net_path, "cpu");
         }
       };
 

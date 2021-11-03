@@ -16,11 +16,11 @@
 
 #include <memory>
 
-#include "kuhn_poker.h"
+#include "leduck_poker.h"
 #include "net_interface.h"
 #include "subgame_solving.h"
 
-namespace kuhn_poker
+namespace leduck_poker
 {
 
   float eval_net(const Game &game, const TreeStrategy &net_strategy,
@@ -28,4 +28,4 @@ namespace kuhn_poker
                  std::shared_ptr<IValueNet> net, bool traverse_by_net,
                  bool verbose);
 
-} // namespace kuhn_poker
+} // namespace leduck_poker

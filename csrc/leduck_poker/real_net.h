@@ -15,11 +15,11 @@
 #pragma once
 #include <memory>
 
-#include "kuhn_poker.h"
+#include "leduck_poker.h"
 #include "net_interface.h"
 #include "subgame_solving.h"
 
-namespace kuhn_poker
+namespace leduck_poker
 {
 
     // Creates a net that outputs zeros on query and nothing on update.
@@ -35,4 +35,4 @@ namespace kuhn_poker
     std::shared_ptr<IValueNet> create_oracle_value_predictor(
         const Game &game, const SubgameSolvingParams &params);
 
-} // namespace kuhn_poker
+} // namespace leduck_poker

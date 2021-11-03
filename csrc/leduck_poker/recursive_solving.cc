@@ -25,12 +25,12 @@
 #include <random>
 #include <vector>
 
-#include "kuhn_poker.h"
+#include "leduck_poker.h"
 #include "net_interface.h"
 #include "subgame_solving.h"
 #include "util.h"
 
-namespace kuhn_poker
+namespace leduck_poker
 {
 
   namespace
@@ -395,4 +395,4 @@ namespace kuhn_poker
                                                 /*use_samplig_strategy=*/true);
   }
 
-} // namespace kuhn_poker
+} // namespace leduck_poker

@@ -24,12 +24,12 @@
 
 #include <torch/torch.h>
 
-#include "kuhn_poker.h"
+#include "leduck_poker.h"
 #include "net_interface.h"
 #include "real_net.h"
 #include "util.h"
 
-namespace kuhn_poker
+namespace leduck_poker
 {
 
   namespace
@@ -281,7 +281,7 @@ namespace kuhn_poker
                               const std::vector<double> &initial_beliefs,
                               int player)
       {
-        kuhn_poker::compute_reach_probabilities(
+        leduck_poker::compute_reach_probabilities(
             tree, strategy, initial_beliefs, player, &reach_probabilities[player]);
       }
 
@@ -599,7 +599,7 @@ namespace kuhn_poker
 
       void print_strategy(const std::string &path) const override
       {
-        kuhn_poker::print_strategy(game, tree, average_strategies, path);
+        leduck_poker::print_strategy(game, tree, average_strategies, path);
       }
 
       std::vector<double> get_hand_values(int player_id) const override
@@ -864,7 +864,7 @@ namespace kuhn_poker
 
       void print_strategy(const std::string &path) const override
       {
-        kuhn_poker::print_strategy(game, tree, average_strategies, path);
+        leduck_poker::print_strategy(game, tree, average_strategies, path);
       }
 
       std::vector<double> get_hand_values(int player_id) const override
@@ -1289,4 +1289,4 @@ namespace kuhn_poker
       return immediate_regrets;
     }
 
-  } // namespace kuhn_poker
+  } // namespace leduck_poker

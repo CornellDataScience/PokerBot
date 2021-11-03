@@ -22,11 +22,11 @@ Recursive training and evaluation.
 #include <random>
 #include <vector>
 
-#include "kuhn_poker.h"
+#include "leduck_poker.h"
 #include "net_interface.h"
 #include "subgame_solving.h"
 
-namespace kuhn_poker
+namespace leduck_poker
 {
 
   struct RecursiveSolvingParams
@@ -116,4 +116,4 @@ namespace kuhn_poker
       const Game &game, const SubgameSolvingParams &subgame_params,
       std::shared_ptr<IValueNet> net, int seed, bool root_only = false);
 
-} // namespace kuhn_poker
+} // namespace leduck_poker

@@ -20,7 +20,7 @@
 #include "subgame_solving.h"
 #include "util.h"
 
-using namespace kuhn_poker;
+using namespace leduck_poker;
 
 namespace {
 double compute_fp_exploitability(const Game& game,

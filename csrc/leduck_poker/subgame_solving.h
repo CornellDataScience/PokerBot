@@ -21,11 +21,11 @@ Solvers (FP and CFR) for subgames.
 #include <array>
 #include <vector>
 
-#include "kuhn_poker.h"
+#include "leduck_poker.h"
 #include "net_interface.h"
 #include "tree.h"
 
-namespace kuhn_poker
+namespace leduck_poker
 {
 
   template <class T>
@@ -182,4 +182,4 @@ namespace kuhn_poker
     std::vector<double> node_reach;
   };
 
-} // namespace kuhn_poker
+} // namespace leduck_poker

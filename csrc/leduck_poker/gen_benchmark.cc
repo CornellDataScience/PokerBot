@@ -29,7 +29,7 @@
 #include "subgame_solving.h"
 #include "util.h"
 
-using namespace kuhn_poker;
+using namespace leduck_poker;
 using namespace rela;
 
 int get_depth(const Tree &tree, int root = 0)

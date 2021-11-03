@@ -163,4 +163,4 @@ namespace leduck_poker
     const int num_hands_;
   };
 
-} // namespace kuhn_poker
+} // namespace leduck_poker

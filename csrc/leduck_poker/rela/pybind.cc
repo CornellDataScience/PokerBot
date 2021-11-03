@@ -37,38 +37,38 @@ namespace
     std::shared_ptr<ThreadLoop> create_cfr_thread(
         std::shared_ptr<ModelLocker> modelLocker,
         std::shared_ptr<ValuePrioritizedReplay> replayBuffer,
-        const kuhn_poker::RecursiveSolvingParams &cfg, int seed)
+        const leduck_poker::RecursiveSolvingParams &cfg, int seed)
     {
         auto connector =
             std::make_shared<CVNetBufferConnector>(modelLocker, replayBuffer);
         return std::make_shared<DataThreadLoop>(std::move(connector), cfg, seed);
     }
 
-    float compute_exploitability(kuhn_poker::RecursiveSolvingParams params,
+    float compute_exploitability(leduck_poker::RecursiveSolvingParams params,
                                  const std::string &model_path)
     {
         py::gil_scoped_release release;
-        kuhn_poker::Game game(params.deck_size, params.community_pot, params.stack);
+        leduck_poker::Game game(params.deck_size, params.community_pot, params.stack);
         std::shared_ptr<IValueNet> net =
-            kuhn_poker::create_torchscript_net(model_path);
+            leduck_poker::create_torchscript_net(model_path);
         const auto tree_strategy =
             compute_strategy_recursive(game, params.subgame_params, net);
-        kuhn_poker::print_strategy(game, unroll_tree(game), tree_strategy);
-        return kuhn_poker::compute_exploitability(game, tree_strategy);
+        leduck_poker::print_strategy(game, unroll_tree(game), tree_strategy);
+        return leduck_poker::compute_exploitability(game, tree_strategy);
     }
 
-    auto compute_stats_with_net(kuhn_poker::RecursiveSolvingParams params,
+    auto compute_stats_with_net(leduck_poker::RecursiveSolvingParams params,
                                 const std::string &model_path)
     {
         py::gil_scoped_release release;
-        kuhn_poker::Game game(params.deck_size, params.community_pot, params.stack);
+        leduck_poker::Game game(params.deck_size, params.community_pot, params.stack);
         std::shared_ptr<IValueNet> net =
-            kuhn_poker::create_torchscript_net(model_path);
+            leduck_poker::create_torchscript_net(model_path);
         const auto net_strategy =
             compute_strategy_recursive_to_leaf(game, params.subgame_params, net);
-        kuhn_poker::print_strategy(game, unroll_tree(game), net_strategy);
+        leduck_poker::print_strategy(game, unroll_tree(game), net_strategy);
         const float explotability =
-            kuhn_poker::compute_exploitability(game, net_strategy);
+            leduck_poker::compute_exploitability(game, net_strategy);
 
         auto full_params = params.subgame_params;
         full_params.max_depth = 100000;
@@ -87,12 +87,12 @@ namespace
         return std::make_tuple(explotability, mse_net_traverse, mse_full_traverse);
     }
 
-    float compute_exploitability_no_net(kuhn_poker::RecursiveSolvingParams params)
+    float compute_exploitability_no_net(leduck_poker::RecursiveSolvingParams params)
     {
         py::gil_scoped_release release;
-        kuhn_poker::Game game(params.deck_size, params.community_pot, params.stack);
-        auto fp = kuhn_poker::build_solver(game, game.get_initial_state(),
-                                           kuhn_poker::get_initial_beliefs(game),
+        leduck_poker::Game game(params.deck_size, params.community_pot, params.stack);
+        auto fp = leduck_poker::build_solver(game, game.get_initial_state(),
+                                           leduck_poker::get_initial_beliefs(game),
                                            params.subgame_params, /*net=*/nullptr);
         float values[2] = {0.0};
         for (int iter = 0; iter < params.subgame_params.num_iters; ++iter)
@@ -108,7 +108,7 @@ namespace
             if (PyErr_CheckSignals() != 0)
                 throw py::error_already_set();
         }
-        kuhn_poker::print_strategy(game, unroll_tree(game), fp->get_strategy());
+        leduck_poker::print_strategy(game, unroll_tree(game), fp->get_strategy());
         return values[0] + values[1];
     }
 
@@ -155,38 +155,38 @@ PYBIND11_MODULE(rela, m)
 
     py::class_<ThreadLoop, std::shared_ptr<ThreadLoop>>(m, "ThreadLoop");
 
-    py::class_<kuhn_poker::SubgameSolvingParams>(m, "SubgameSolvingParams")
+    py::class_<leduck_poker::SubgameSolvingParams>(m, "SubgameSolvingParams")
         .def(py::init<>())
-        .def_readwrite("num_iters", &kuhn_poker::SubgameSolvingParams::num_iters)
-        .def_readwrite("max_depth", &kuhn_poker::SubgameSolvingParams::max_depth)
+        .def_readwrite("num_iters", &leduck_poker::SubgameSolvingParams::num_iters)
+        .def_readwrite("max_depth", &leduck_poker::SubgameSolvingParams::max_depth)
         .def_readwrite("linear_update",
-                       &kuhn_poker::SubgameSolvingParams::linear_update)
+                       &leduck_poker::SubgameSolvingParams::linear_update)
         .def_readwrite("optimistic",
-                       &kuhn_poker::SubgameSolvingParams::optimistic)
-        .def_readwrite("use_cfr", &kuhn_poker::SubgameSolvingParams::use_cfr)
-        .def_readwrite("dcfr", &kuhn_poker::SubgameSolvingParams::dcfr)
+                       &leduck_poker::SubgameSolvingParams::optimistic)
+        .def_readwrite("use_cfr", &leduck_poker::SubgameSolvingParams::use_cfr)
+        .def_readwrite("dcfr", &leduck_poker::SubgameSolvingParams::dcfr)
         .def_readwrite("dcfr_alpha",
-                       &kuhn_poker::SubgameSolvingParams::dcfr_alpha)
-        .def_readwrite("dcfr_beta", &kuhn_poker::SubgameSolvingParams::dcfr_beta)
+                       &leduck_poker::SubgameSolvingParams::dcfr_alpha)
+        .def_readwrite("dcfr_beta", &leduck_poker::SubgameSolvingParams::dcfr_beta)
         .def_readwrite("dcfr_gamma",
-                       &kuhn_poker::SubgameSolvingParams::dcfr_gamma);
+                       &leduck_poker::SubgameSolvingParams::dcfr_gamma);
 
-    py::class_<kuhn_poker::RecursiveSolvingParams>(m, "RecursiveSolvingParams")
+    py::class_<leduck_poker::RecursiveSolvingParams>(m, "RecursiveSolvingParams")
         .def(py::init<>())
-        .def_readwrite("deck_size", &kuhn_poker::RecursiveSolvingParams::deck_size)
-	.def_readwrite("community_pot", &kuhn_poker::RecursiveSolvingParams::community_pot)
-	.def_readwrite("stack", &kuhn_poker::RecursiveSolvingParams::stack)
+        .def_readwrite("deck_size", &leduck_poker::RecursiveSolvingParams::deck_size)
+	.def_readwrite("community_pot", &leduck_poker::RecursiveSolvingParams::community_pot)
+	.def_readwrite("stack", &leduck_poker::RecursiveSolvingParams::stack)
         .def_readwrite("random_action_prob",
-                       &kuhn_poker::RecursiveSolvingParams::random_action_prob)
+                       &leduck_poker::RecursiveSolvingParams::random_action_prob)
         .def_readwrite("sample_leaf",
-                       &kuhn_poker::RecursiveSolvingParams::sample_leaf)
+                       &leduck_poker::RecursiveSolvingParams::sample_leaf)
         .def_readwrite("subgame_params",
-                       &kuhn_poker::RecursiveSolvingParams::subgame_params);
+                       &leduck_poker::RecursiveSolvingParams::subgame_params);
 
     py::class_<DataThreadLoop, ThreadLoop, std::shared_ptr<DataThreadLoop>>(
         m, "DataThreadLoop")
         .def(py::init<std::shared_ptr<CVNetBufferConnector>,
-                      const kuhn_poker::RecursiveSolvingParams &, int>(),
+                      const leduck_poker::RecursiveSolvingParams &, int>(),
              py::arg("connector"), py::arg("params"), py::arg("thread_id"));
 
     py::class_<rela::Context>(m, "Context")

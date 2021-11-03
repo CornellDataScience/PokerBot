@@ -19,9 +19,9 @@
 #include <utility>
 #include <vector>
 
-#include "kuhn_poker.h"
+#include "leduck_poker.h"
 
-namespace kuhn_poker
+namespace leduck_poker
 {
 
   struct UnrolledTreeNode;
@@ -31,13 +31,13 @@ namespace kuhn_poker
   // children_end, and parent being indices in the vector.
   struct UnrolledTreeNode
   {
-    kuhn_poker::PartialPublicState state;
+    leduck_poker::PartialPublicState state;
     int children_begin;
     int children_end;
     int parent;
     int depth;
 
-    //2 for kuhn poker
+    //2 for leduck poker
     int num_children() const { return children_end - children_begin; }
     // Coulnd't this be zero depending on the state??
 
@@ -150,4 +150,4 @@ namespace kuhn_poker
     State begin() const { return State(node.children_begin); }
     State end() const { return State(node.children_end); }
   };
-} // namespace kuhn_poker
+} // namespace leduck_poker

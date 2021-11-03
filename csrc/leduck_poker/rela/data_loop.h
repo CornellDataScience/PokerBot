@@ -71,13 +71,13 @@ namespace rela
   {
   public:
     DataThreadLoop(std::shared_ptr<CVNetBufferConnector> connector,
-                   const kuhn_poker::RecursiveSolvingParams &cfg, int seed)
+                   const leduck_poker::RecursiveSolvingParams &cfg, int seed)
         : connector_(std::move(connector)), cfg_(cfg), seed_(seed) {}
 
     virtual void mainLoop() final
     {
       auto runner =
-          std::make_unique<kuhn_poker::RlRunner>(cfg_, connector_, seed_);
+          std::make_unique<leduck_poker::RlRunner>(cfg_, connector_, seed_);
       while (!terminated())
       {
         if (paused())
@@ -90,7 +90,7 @@ namespace rela
 
   private:
     std::shared_ptr<IValueNet> connector_;
-    const kuhn_poker::RecursiveSolvingParams cfg_;
+    const leduck_poker::RecursiveSolvingParams cfg_;
     const int seed_;
   };
 

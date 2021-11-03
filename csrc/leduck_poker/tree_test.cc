@@ -15,7 +15,7 @@
 #include "tree.h"
 #include <gtest/gtest.h>
 
-using namespace kuhn_poker;
+using namespace leduck_poker;
 
 TEST(TreeTest, TestUnroll) {
   const int num_dice = 1;

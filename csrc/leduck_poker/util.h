@@ -17,7 +17,7 @@
 #include <numeric>
 #include <vector>
 
-namespace kuhn_poker
+namespace leduck_poker
 {
 
   constexpr double kAlmostZero = 1e-200;
@@ -102,4 +102,4 @@ namespace kuhn_poker
     return std::accumulate(vector.begin(), vector.end(), T{0});
   }
 
-} // namespace kuhn_poker
+} // namespace leduck_poker

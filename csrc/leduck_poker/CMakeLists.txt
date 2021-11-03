@@ -34,12 +34,12 @@ if (NOT TARGET torch_library)
   find_package(Torch REQUIRED)
 endif()
 
-add_library(kuhn_poker_lib kuhn_poker subgame_solving real_net recursive_solving stats)
-target_link_libraries(kuhn_poker_lib torch)
-set_target_properties(kuhn_poker_lib PROPERTIES CXX_STANDARD 17)
+add_library(leduck_poker_lib leduck_poker subgame_solving real_net recursive_solving stats)
+target_link_libraries(leduck_poker_lib torch)
+set_target_properties(leduck_poker_lib PROPERTIES CXX_STANDARD 17)
 
 add_executable(recursive_eval recursive_eval)
-target_link_libraries(recursive_eval kuhn_poker_lib)
+target_link_libraries(recursive_eval leduck_poker_lib)
 
 add_subdirectory(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/pybind11 third_party/pybind11
@@ -55,28 +55,28 @@ target_link_libraries(_rela torch)
 
 # python lib
 pybind11_add_module(rela rela/pybind.cc)
-target_link_libraries(rela PUBLIC _rela kuhn_poker_lib)
+target_link_libraries(rela PUBLIC _rela leduck_poker_lib)
 
 add_executable(gen_benchmark gen_benchmark)
-target_link_libraries(gen_benchmark kuhn_poker_lib _rela)
+target_link_libraries(gen_benchmark leduck_poker_lib _rela)
 
 #################
 # Tests
 # include(GoogleTest)
 # enable_testing()
 
-# add_executable(kuhn_game_test kuhn_poker_test.cc)
-#target_link_libraries(kuhn_game_test kuhn_poker_lib gtest_main)
-#add_test(NAME kuhn_game COMMAND kuhn_game_test)
+# add_executable(leduck_game_test leduck_poker_test.cc)
+#target_link_libraries(leduck_game_test leduck_poker_lib gtest_main)
+#add_test(NAME leduck_game COMMAND leduck_game_test)
 
-#(kuhn_tree_test tree_test.cc)
-#target_link_libraries(kuhn_tree_test kuhn_poker_lib gtest_main)
-#add_test(NAME kuhn_tree COMMAND kuhn_tree_test)
+#(leduck_tree_test tree_test.cc)
+#target_link_libraries(leduck_tree_test leduck_poker_lib gtest_main)
+#add_test(NAME leduck_tree COMMAND leduck_tree_test)
 
-#add_executable(kuhn_recursive_solving_test recursive_solving_test.cc)
-#target_link_libraries(kuhn_recursive_solving_test kuhn_poker_lib gtest_main)
-#add_test(NAME kuhn_recursive_solving COMMAND kuhn_recursive_solving_test)
+#add_executable(leduck_recursive_solving_test recursive_solving_test.cc)
+#target_link_libraries(leduck_recursive_solving_test leduck_poker_lib gtest_main)
+#add_test(NAME leduck_recursive_solving COMMAND leduck_recursive_solving_test)
 
-#add_executable(kuhn_subgame_solving_test subgame_solving_test.cc)
-#target_link_libraries(_subgame_solving_test kuhn_poker_lib gtest_main)
-#add_test(NAME kuhn_subgame_solving COMMAND kuhn_subgame_solving_test)
+#add_executable(leduck_subgame_solving_test subgame_solving_test.cc)
+#target_link_libraries(_subgame_solving_test leduck_poker_lib gtest_main)
+#add_test(NAME leduck_subgame_solving COMMAND leduck_subgame_solving_test)
