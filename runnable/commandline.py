@@ -5,7 +5,7 @@ from torch import jit
 import random
 
 
-class kuhnPokerGame:
+class KuhnPokerGame:
     def __init__(self, deck_size, stacks=(10, 10)):
         self.deck_size = deck_size
         self.stacks = stacks
@@ -18,7 +18,7 @@ class kuhnPokerGame:
 
     def build_deck():
         # numbers=list(range(self.deck_size))
-        #suits = ['H','S','C','D']
+        # suits = ['H','S','C','D']
         deck = ['J', 'Q', 'K']
         return deck
 
@@ -47,15 +47,59 @@ class kuhnPokerGame:
         return (first, second)
 
 
-@click.command()
+class Strategy:
+    def __init__(self, deck_size):
+        # MOVE # (0 or 2) : {J: [prob distribution], Q: [prob distribution]}
+        self.strategy_distribution = {}
+        self.deck_size = deck_size
+
+    def sampleMove(self, node, card):
+        print(self.strategy_distribution)
+
+        moveProb = random.random()
+        lowerBound = 0
+        for i in range(0, len(self.strategy_distribution[node][card])):
+            if moveProb > lowerBound and moveProb < lowerBound + float(self.strategy_distribution[node][card][i]):
+                return i
+            lowerBound += float(self.strategy_distribution[node][card][i])
+
+
+def readPokerBot(model, deck_size):
+    lines = open(model).readlines()
+    count = 0
+    strategy = Strategy(deck_size)
+    for line in lines:
+        print(line)
+        count += 1
+        if(count == 1):
+            continue
+        node_strategy = line.split("|")
+        node_lastmove = node_strategy[0].strip().split("\t")
+        # strategy = {0: ______, 2:________ }
+        node = node_lastmove[0][node_lastmove[0].index('=') + 1:]
+        strategy.strategy_distribution[node] = {}
+        for i in range(1, len(node_strategy)):
+            hand_actdistribution = node_strategy[i].strip().split(" ")
+            hand = hand_actdistribution[0][hand_actdistribution[0].index(
+                '=') + 1]
+            strategy.strategy_distribution[node][hand] = hand_actdistribution[1:]
+    return strategy
+
+
+@ click.command()
 # @click.option('--name', prompt='Your name',help='The person to greet.')
-@click.argument('model', type=click.Path(exists=True))
+@ click.argument('model', type=click.Path(exists=True))
 def main(model):
     # click.echo("{}".format(name))
-    net = jit.load(model)
-    # print(net)
+    # net = jit.load(model)
 
-    game = kuhnPokerGame(3, stacks=(1, 1))
+    main2(model)
+
+
+"""
+    strategy = readPokerBot(model, 3)
+
+    game = KuhnPokerGame(3, stacks=(1, 1))
 
     while(True):
 
@@ -71,7 +115,12 @@ def main(model):
             actionList = game.getPossibleActions()
 
             click.echo("Do you choose to: " + str(actionList.keys()))
-            action = click.prompt('Please enter exact action: ')
+
+            if(currentPlayer == 0):
+                action = click.prompt('Please enter exact action: ')
+            else:
+                action = strategy.sampleMove(game.tree_loc, cardDealt[1])
+
             lastAction = action
             if action == 'Bet':
                 game.community_pot = game.community_pot[currentPlayer] + 1
@@ -107,7 +156,15 @@ def main(model):
         # update stack
         # reinitialize game.
         click.echo("game over")
-        game = kuhnPokerGame(3, stacks=currentStiggityStackz)
+        game = KuhnPokerGame(3, stacks=currentStiggityStackz)
+        """
+
+
+def main2(model):
+    strategy = readPokerBot(model, 3)
+    action = strategy.sampleMove('0', '2')
+    print(strategy.strategy_distribution)
+    print(action)
 
 
 if __name__ == "__main__":
