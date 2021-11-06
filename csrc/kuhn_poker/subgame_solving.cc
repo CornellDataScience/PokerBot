@@ -115,16 +115,14 @@ namespace kuhn_poker
       const auto belief_sum = vector_sum(op_reach_probabilities);
       //std::cout << "Computed belief sum: " << belief_sum << "\n" << std::flush;
       // Payoff: (probability(win) * 1.0 + probability(lose) * (-1.0).
+      const auto payout = std::min(state.community_pot.first, state.community_pot.second);
       for (double &v : values)
       {
         // v <- ((v / belief_sum) * 2 - 1) * belief_sum;
         v = v * 2 - belief_sum;
+        v = v * payout;
       }
 
-      for (double &v : values)
-      {
-        v = v * std::min(state.community_pot.first, state.community_pot.second);
-      }
       //std::cout << "Modified values correctly\n" << std::flush;
       if (inverse)
       {
@@ -133,11 +131,10 @@ namespace kuhn_poker
           v *= -1.0;
         }
       }
-      // for (double &v : values)
-      // {
-      //   std::cout << std::setprecision(15) << v << "\n"
-      //             << std::flush;
-      // }
+
+      // std::cout << values << "\n"
+      //           << std::flush;
+
       return values;
     }
 
@@ -197,6 +194,9 @@ namespace kuhn_poker
           }
         }
       }
+      // seems off?
+      // std::cout << "weighted strategy: " << strategy << "\n"
+      //           << std::flush;
       return strategy;
     }
 
@@ -370,10 +370,16 @@ namespace kuhn_poker
         {
           //std::cout << "Node ID: " << node_id << ", parent id: " << tree[node_id].parent << "\n" << std::flush;
           //std::cout << "2tree parent last action: " << game.state_to_string(tree[tree[node_id].parent].state) << "\n" << std::flush;
-          const auto last_bid = tree[tree[node_id].parent].state.last_action;
+          // const auto last_bid = tree[tree[node_id].parent].state.last_action;
           //std::cout << "Got the prior bid\n" << std::flush;
+          //changed
+          // traverser_values[node_id] = compute_expected_terminal_values(
+          //     game, tree[tree[node_id].parent].state, last_bid,
+          //     /*inverse=*/tree[node_id].state.player_id != traverser,
+          //     reach_probabilities[1 - traverser][node_id], reach_probabilities[traverser][node_id]);
+          const auto last_bid = tree[node_id].state.last_action;
           traverser_values[node_id] = compute_expected_terminal_values(
-              game, tree[tree[node_id].parent].state, last_bid,
+              game, tree[node_id].state, last_bid,
               /*inverse=*/tree[node_id].state.player_id != traverser,
               reach_probabilities[1 - traverser][node_id], reach_probabilities[traverser][node_id]);
           //std::cout << "Computed traverser values\n" << std::flush;
@@ -924,6 +930,8 @@ namespace kuhn_poker
                   strategy[node_id][hand].begin() + last, 1. / (last - first));
       }
     }
+    // std::cout << strategy << "\n"
+    //           << std::flush;
     return strategy;
   }
 
@@ -976,20 +984,24 @@ namespace kuhn_poker
 
     // std::cout << "Values has size: " << values.size() << " while there are " << game.num_hands() << " hands and the PBS has size " << op_beliefs.size() << "\n"
     //          << std::flush;
+    // std::cout << bet << "\n"
+    //           << std::flush;
+
     for (int hand = 0; hand < static_cast<int>(op_beliefs.size()); ++hand)
     {
       double prob_to_win;
       if (bet == 0)
       {
-        prob_to_win = 1.0;
+        prob_to_win = 0.0;
       }
       else
       {
-        prob_to_win = (values.size() - hand - 1.0) / (values.size() - 1.0) * op_beliefs[hand];
+        prob_to_win = (values.size() - hand - 1.0) / (values.size() - 1.0);
+        // prob_to_win = 0.0;
 
         // for (int my_hand = hand + 1; my_hand < static_cast<int>(my_beliefs.size()); ++my_hand)
         // {
-        //   prob_to_win = prob_to_win + my_beliefs[my_hand];
+        //   prob_to_win = prob_to_win;
         // }
       }
       values[hand] = prob_to_win;
@@ -1063,11 +1075,19 @@ namespace kuhn_poker
       compute_reach_probabilities(tree, strategy, uniform_beliefs, player,
                                   &reach_probabilities[player]);
     }
+
     for (size_t node_id = tree.size(); node_id-- > 0;)
     {
       stats.node_reach[node_id] = vector_sum(reach_probabilities[0][node_id]) *
                                   vector_sum(reach_probabilities[1][node_id]);
+      // std::cout << "Node: " << node_id << " - " << stats.node_reach[node_id] << "\n"
+      //           << std::flush;
     }
+
+    // std::cout << "Done"
+    //           << "\n"
+    //           << std::flush;
+
     for (int player : {0, 1})
     {
       for (size_t node_id = tree.size(); node_id-- > 0;)
@@ -1088,9 +1108,12 @@ namespace kuhn_poker
 
         if (game.is_terminal(state))
         {
-          const auto last_bid = tree[node.parent].state.last_action;
+          // const auto last_bid = tree[node.parent].state.last_action;
+          // node_values = compute_expected_terminal_values(
+          //     game, tree[node.parent].state, last_bid, /*inverse=*/state.player_id != player, op_beliefs, my_beliefs);
+          const auto last_bid = state.last_action;
           node_values = compute_expected_terminal_values(
-              game, tree[node.parent].state, last_bid, /*inverse=*/state.player_id != player, op_beliefs, my_beliefs);
+              game, state, last_bid, /*inverse=*/state.player_id != player, op_beliefs, my_beliefs);
         }
         else
         {
@@ -1208,9 +1231,13 @@ namespace kuhn_poker
       if (node.num_children() == 0)
       {
         assert(game.is_terminal(state));
-        const auto last_bid = tree[node.parent].state.last_action;
+        // const auto last_bid = tree[node.parent].state.last_action;
+        // values[node_id] = compute_expected_terminal_values(
+        //     game, tree[node.parent].state, last_bid, /*inverse=*/state.player_id != player,
+        //     op_reach_probabilities[node_id], my_reach_probabilities[node_id]);
+        const auto last_bid = state.last_action;
         values[node_id] = compute_expected_terminal_values(
-            game, tree[node.parent].state, last_bid, /*inverse=*/state.player_id != player,
+            game, state, last_bid, /*inverse=*/state.player_id != player,
             op_reach_probabilities[node_id], my_reach_probabilities[node_id]);
       }
       else if (state.player_id == player)
