@@ -17,27 +17,38 @@
 
 #include <sstream>
 
-namespace kuhn_poker {
-std::string Game::action_to_string(Action action) const {
-    if (action == 0) {
+namespace kuhn_poker
+{
+  std::string Game::action_to_string(Action action) const
+  {
+    if (action == 0)
+    {
       return "fold";
-    } else if (action == 1){
-      return "check";
-    } else if (action == 2){
+    }
+    else if (action == 1)
+    {
       return "call";
-    } else if (action == 3){{
-      return "bet";
+    }
+    else if (action == 2)
+    {
+      return "check";
+    }
+    else if (action == 3)
+    {
+      {
+        return "bet";
+      }
     }
   }
-}
 
-std::string Game::state_to_string(const PartialPublicState& state) const {
-  std::ostringstream ss;
-  const std::string last_action = state.last_action == kInitialAction
-                                   ? "start"
-                                   : action_to_string(state.last_action);
-  ss << "(pid=" << state.player_id << ",last=" << last_action << ")";
-  return ss.str();
-}
+  std::string Game::state_to_string(const PartialPublicState &state) const
+  {
+    std::ostringstream ss;
+    const std::string last_action = state.last_action == kInitialAction
+                                        ? "start"
+                                        : action_to_string(state.last_action);
+    ss << "(pid=" << state.player_id << ",last=" << last_action << ")";
+    return ss.str();
+  }
 
-}  // namespace kuhn_poker
+} // namespace kuhn_poker
