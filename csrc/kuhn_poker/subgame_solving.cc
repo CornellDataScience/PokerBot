@@ -193,7 +193,7 @@ namespace kuhn_poker
           {
             //changed here
             strategy[node][i][action_begin] *= reach_probabilities_buffer[node][i];
-            strategy[node][i][action_end] *= reach_probabilities_buffer[node][i];
+            strategy[node][i][action_end - 1] *= reach_probabilities_buffer[node][i];
           }
         }
       }
@@ -878,6 +878,7 @@ namespace kuhn_poker
 
       void print_strategy(const std::string &path) const override
       {
+
         kuhn_poker::print_strategy(game, tree, average_strategies, path);
       }
 
@@ -913,7 +914,10 @@ namespace kuhn_poker
     for (size_t node_id = 0; node_id < tree.size(); ++node_id)
     {
       int first = game.get_action_list(tree[node_id].state).first;
+      // int last = game.get_action_list(tree[node_id].state).second;
       int last = first + tree[node_id].num_children();
+      // std::cout << "First: " << first << ", Last: " << last << "\n"
+      //           << std::flush;
       for (int hand = 0; hand < game.num_hands(); ++hand)
       {
         std::fill(strategy[node_id][hand].begin() + first,
