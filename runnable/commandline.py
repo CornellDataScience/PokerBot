@@ -120,10 +120,11 @@ def readPokerBot(model, deck_size):
 
 @ click.command()
 @ click.argument('model', type=click.Path(exists=True))
-@ click.option('--cheat', type=bool, default=False)
-@ click.option('--firstplayer', type=bool, default=True)
-@ click.option('--initstack', type=int, default=10)
+@ click.option('--cheat', type=bool, default=False, help='Set true if you want to see the bot\'s cards :)')
+@ click.option('--firstplayer', type=bool, default=True, help='Set false if you want to start as second player')
+@ click.option('--initstack', type=int, default=10, help='Initial stack amount')
 def main(model, cheat, firstplayer, initstack):
+    """Lets you play against a specified Kuhn Poker bot! You and the bot switch off as first player each round. Program takes a model argument as path to strategy .txt file"""
     # net = jit.load(model)
     bot = readPokerBot(model, 3)
     game = KuhnPokerGame(3, (initstack, initstack), 0 if firstplayer else 1)
