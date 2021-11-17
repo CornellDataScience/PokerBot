@@ -12,8 +12,8 @@ class KuhnPokerGame:
         self.game_tree = ['Start',
                           'Check', 'Bet',
                           'Check', 'Bet', 'Fold', 'Call',
-                          '', '', 'Fold', 'Call']
-        self.tree_loc = 0  # 2*i + 1, 2*i + 2
+                          'youve come to a terrible ', 'terrible place', 'Fold', 'Call']
+        self.tree_loc = 0  # children: 2*i + 1, 2*i + 2
         self.dealt_cards = self.dealCards()
         self.deck = ['J', 'Q', 'K']
         self.first_player = first_player
@@ -125,15 +125,16 @@ def readPokerBot(model, deck_size):
 @ click.option('--initstack', type=int, default=10)
 def main(model, cheat, firstplayer, initstack):
     # net = jit.load(model)
-    strategy = readPokerBot(model, 3)
+    bot = readPokerBot(model, 3)
     game = KuhnPokerGame(3, (initstack, initstack), 0 if firstplayer else 1)
     # player is 0, bot is 1
     while(True):
         click.echo(click.style(
             '---------------------------------- STARTING GAME ----------------------------------', bg='white', fg='black'))
-        click.echo(">>> Requiring ante of 1")
+        click.echo(">>> Requiring ante of 1...")
         game.requireAnte(1)
-        click.echo(">>> Current stacks: " + str(game.stacks))
+        click.echo(">>> Current stacks - You: " +
+                   str(game.stacks[0]) + ", Bot: " + str(game.stacks[1]))
 
         cardDealt = game.dealt_cards
 
@@ -145,21 +146,24 @@ def main(model, cheat, firstplayer, initstack):
                        game.deck[cardDealt[0]], fg='green'))
 
         while(not game.isTerminal()):
+            #### Prompt for next action ####
             actionList = game.getPossibleActions()
-
+            click.echo("")
             if(game.current_player == 0):
                 action = click.prompt(click.style(
-                    "Do you choose to: " + str(actionList.keys()), fg='green'))
+                    "Do you choose to " + str(actionList.keys()), fg='green'))
             else:
-                action = strategy.sampleMove(game.tree_loc, cardDealt[1])
+                action = bot.sampleMove(game.tree_loc, cardDealt[1])
                 click.echo(click.style(
                     "Bot chose to: " + str(action), fg='red'))
 
+            #### Update pot with action ####
             if action == 'Bet':
                 game.playerBetPotUpdate(game.current_player)
             elif action == 'Call':
                 game.playerBetPotUpdate(game.current_player)
 
+            #### Continue in game ####
             game.moveTreeLocation(actionList[action])
             game.switchPlayer(action)
 
@@ -168,8 +172,8 @@ def main(model, cheat, firstplayer, initstack):
 
         # reinitialize game.
         winnerName = "the bot" if winner == 1 else "you"
-        click.echo(click.style("----------------- GAME OVER - Winner is " + winnerName +
-                   "! Final amount: " + str(currentStacks) + " -----------------", bg='white', fg='black'))
+        click.echo(click.style("------------------ GAME OVER - Winner is " + winnerName +
+                   "! You: " + str(currentStacks[0]) + " Bot: " + str(currentStacks[1]) + " ------------------", bg='white', fg='black'))
         click.echo("")
         click.echo("")
         game = KuhnPokerGame(3, currentStacks, (game.first_player + 1) % 2)
