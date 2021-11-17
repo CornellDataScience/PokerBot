@@ -17,6 +17,8 @@ class KuhnPokerGame:
         self.dealt_cards = self.dealCards()
         self.deck = ['J', 'Q', 'K']
         self.first_player = first_player
+        self.current_player = first_player
+        self.last_action = 'Start'
 
     def build_deck():
         deck = ['J', 'Q', 'K']
@@ -25,11 +27,22 @@ class KuhnPokerGame:
     def isTerminal(self):
         return self.tree_loc >= 9 or self.tree_loc == 3 or (self.tree_loc >= 5 and self.tree_loc <= 6)
 
+    def getWinner(self):
+        assert(self.isTerminal())
+        if(self.last_action == 'Fold'):
+            return self.current_player
+        else:
+            return 1 if self.dealt_cards[1] > self.dealt_cards[0] else 0
+
     def getPossibleActions(self):
         return {
             self.game_tree[2 * self.tree_loc + 1]: 2 * self.tree_loc + 1,
             self.game_tree[2 * self.tree_loc + 2]: 2 * self.tree_loc + 2
         }
+
+    def switchPlayer(self, action):
+        self.current_player = (self.current_player + 1) % 2
+        self.last_action = action
 
     def moveTreeLocation(self, loc):
         self.tree_loc = loc
@@ -121,13 +134,13 @@ def main(model, cheat, firstplayer, initstack):
             click.echo(click.style(">>> You have: " +
                        game.deck[cardDealt[0]], fg='green'))
 
-        currentPlayer = game.first_player
+        #currentPlayer = game.first_player
         lastAction = ''
         while(not game.isTerminal()):
             actionList = game.getPossibleActions()
 
             action = 0
-            if(currentPlayer == 0):
+            if(game.current_player == 0):
                 action = click.prompt(click.style(
                     "Do you choose to: " + str(actionList.keys()), fg='green'))
             else:
@@ -136,23 +149,16 @@ def main(model, cheat, firstplayer, initstack):
                     "Bot chose to: " + str(action), fg='red'))
 
             if action == 'Bet':
-                game.playerBetPotUpdate(currentPlayer)
+                game.playerBetPotUpdate(game.current_player)
             elif action == 'Call':
-                game.playerBetPotUpdate(currentPlayer)
+                game.playerBetPotUpdate(game.current_player)
 
             game.moveTreeLocation(actionList[action])
-            lastAction = action
-            currentPlayer = (currentPlayer + 1) % 2
-
-        # check winner
-        winner = currentPlayer
-
-        if(lastAction == 'Fold'):
-            winner = currentPlayer
-        else:
-            winner = 1 if cardDealt[1] > cardDealt[0] else 0
+            game.switchPlayer(action)
 
         currentStacks = game.stacks
+        winner = game.getWinner()
+        # update stacks
         if(winner == 0):
             currentStacks = (
                 currentStacks[winner] + game.getPotValue(), currentStacks[1])
@@ -160,7 +166,6 @@ def main(model, cheat, firstplayer, initstack):
             currentStacks = (
                 currentStacks[0], currentStacks[winner] + game.getPotValue())
 
-        # update stack
         # reinitialize game.
         winnerName = "the bot" if winner == 1 else "you"
         click.echo(click.style("----------------- GAME OVER - Winner is " + winnerName +
