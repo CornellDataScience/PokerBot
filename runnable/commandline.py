@@ -1,7 +1,6 @@
 import argparse
 from typing import Match
 import click
-from torch import jit
 import random
 
 
@@ -17,13 +16,11 @@ class KuhnPokerGame:
         self.tree_loc = 0  # 2*i + 1, 2*i + 2
 
     def build_deck():
-        # numbers=list(range(self.deck_size))
-        # suits = ['H','S','C','D']
         deck = ['J', 'Q', 'K']
         return deck
 
     def isTerminal(self):
-        return self.tree_loc >= 10 or self.tree_loc == 3 or (self.tree_loc >= 5 and self.tree_loc <= 6)
+        return self.tree_loc >= 9 or self.tree_loc == 3 or (self.tree_loc >= 5 and self.tree_loc <= 6)
 
     def getPossibleActions(self):
         return {
@@ -46,103 +43,103 @@ class KuhnPokerGame:
             second = random.randint(0, self.deck_size - 1)
         return (first, second)
 
+    def playerBetPotUpdate(self, player):
+        if(player == 0):
+            self.community_pot = (
+                self.community_pot[0] + 1, self.community_pot[1])
+            self.stacks = (self.stacks[0] - 1, self.stacks[1])
+        else:
+            self.community_pot = (
+                self.community_pot[0], self.community_pot[1] + 1)
+            self.stacks = (self.stacks[0], self.stacks[1] - 1)
 
-class Strategy:
+
+class Bot:
     def __init__(self, deck_size):
         # MOVE # (0 or 2) : {J: [prob distribution], Q: [prob distribution]}
         self.strategy_distribution = {}
         self.deck_size = deck_size
+        self.action_index = ['Fold', 'Call', 'Check', 'Bet']
 
     def sampleMove(self, node, card):
-        print(self.strategy_distribution)
-
         moveProb = random.random()
         lowerBound = 0
         for i in range(0, len(self.strategy_distribution[node][card])):
             if moveProb > lowerBound and moveProb < lowerBound + float(self.strategy_distribution[node][card][i]):
-                return i
+                return self.action_index[i]
             lowerBound += float(self.strategy_distribution[node][card][i])
 
 
 def readPokerBot(model, deck_size):
     lines = open(model).readlines()
     count = 0
-    strategy = Strategy(deck_size)
+    strategy = Bot(deck_size)
     for line in lines:
-        print(line)
         count += 1
         if(count == 1):
             continue
         node_strategy = line.split("|")
         node_lastmove = node_strategy[0].strip().split("\t")
-        # strategy = {0: ______, 2:________ }
-        node = node_lastmove[0][node_lastmove[0].index('=') + 1:]
+        node = int(node_lastmove[0][node_lastmove[0].index('=') + 1:])
         strategy.strategy_distribution[node] = {}
         for i in range(1, len(node_strategy)):
             hand_actdistribution = node_strategy[i].strip().split(" ")
-            hand = hand_actdistribution[0][hand_actdistribution[0].index(
-                '=') + 1]
+            hand = int(hand_actdistribution[0][hand_actdistribution[0].index(
+                '=') + 1])
             strategy.strategy_distribution[node][hand] = hand_actdistribution[1:]
     return strategy
 
 
 @ click.command()
-# @click.option('--name', prompt='Your name',help='The person to greet.')
 @ click.argument('model', type=click.Path(exists=True))
-def main(model):
-    # click.echo("{}".format(name))
+@ click.option('--cheat', type=bool, default=False)
+def main(model, cheat):
     # net = jit.load(model)
-
-    main2(model)
-
-
-"""
     strategy = readPokerBot(model, 3)
-
     game = KuhnPokerGame(3, stacks=(1, 1))
-
+    startingPlayer = 0  # player is 0, bot is 1
     while(True):
+        click.echo(click.style(
+            '---------------------------------- STARTING GAME ----------------------------------', bg='white', fg='black'))
 
-        click.echo("Requiring ante of 1: ")
+        click.echo(">>> Requiring ante of 1")
         game.requireAnte(1)
-        click.echo(game.stacks)
-        cardDealt = game.dealCards()
-        click.echo("You have: " + str(cardDealt))
+        click.echo(">>> Current stacks: " + str(game.stacks))
 
-        currentPlayer = 0
+        cardDealt = game.dealCards()
+
+        if(cheat):
+            click.echo(click.style(
+                ">>> You have: " + str(cardDealt[0]) + ", the bot has: " + str(cardDealt[1]), fg='green'))
+        else:
+            click.echo(click.style(">>> You have: " +
+                       str(cardDealt[0]), fg='blue'))
+
+        currentPlayer = startingPlayer
+
         lastAction = ''
         while(not game.isTerminal()):
             actionList = game.getPossibleActions()
 
-            click.echo("Do you choose to: " + str(actionList.keys()))
-
+            action = 0
             if(currentPlayer == 0):
-                action = click.prompt('Please enter exact action: ')
+                action = click.prompt(click.style(
+                    "Do you choose to: " + str(actionList.keys()), fg='green'))
             else:
                 action = strategy.sampleMove(game.tree_loc, cardDealt[1])
+                click.echo(click.style(
+                    "Bot chose to: " + str(action), fg='red'))
 
-            lastAction = action
             if action == 'Bet':
-                game.community_pot = game.community_pot[currentPlayer] + 1
-                game.stacks = game.stacks[currentPlayer] - 1
-                game.tree_loc = actionList[action]
-
-            elif action == 'Check':
-                game.tree_loc = actionList[action]
-
+                game.playerBetPotUpdate(currentPlayer)
             elif action == 'Call':
-                game.community_pot = game.community_pot[currentPlayer] + 1
-                game.stacks = game.stacks[currentPlayer] - 1
-                game.tree_loc = actionList[action]
+                game.playerBetPotUpdate(currentPlayer)
 
-            elif action == 'Fold':
-                game.tree_loc = actionList[action]
-
-            currentPlayer = currentPlayer + 1 % 2
+            game.tree_loc = actionList[action]
+            lastAction = action
+            currentPlayer = (currentPlayer + 1) % 2
 
         # check winner
-        currentStiggityStackz = game.stacks
-        click.echo("final amount: " + str(currentStiggityStackz))
         winner = currentPlayer
 
         if(lastAction == 'Fold'):
@@ -150,21 +147,23 @@ def main(model):
         else:
             winner = 1 if cardDealt[1] > cardDealt[0] else 0
 
-        click.echo("winner: " + str(winner))
-        currentStiggityStackz[winner] = currentStiggityStackz[winner] + \
-            game.getPotValue()
+        currentStacks = game.stacks
+        if(winner == 0):
+            currentStacks = (
+                currentStacks[winner] + game.getPotValue(), currentStacks[1])
+        else:
+            currentStacks = (
+                currentStacks[0], currentStacks[winner] + game.getPotValue())
+
         # update stack
         # reinitialize game.
-        click.echo("game over")
-        game = KuhnPokerGame(3, stacks=currentStiggityStackz)
-        """
-
-
-def main2(model):
-    strategy = readPokerBot(model, 3)
-    action = strategy.sampleMove('0', '2')
-    print(strategy.strategy_distribution)
-    print(action)
+        winnerName = "the bot" if winner == 1 else "you"
+        click.echo(click.style("----------------- GAME OVER - Winner is " + winnerName +
+                   "! Final amount: " + str(currentStacks) + " -----------------", bg='white', fg='black'))
+        click.echo("")
+        click.echo("")
+        game = KuhnPokerGame(3, stacks=currentStacks)
+        startingPlayer = (startingPlayer + 1) % 2
 
 
 if __name__ == "__main__":
