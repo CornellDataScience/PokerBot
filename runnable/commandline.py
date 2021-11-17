@@ -5,7 +5,7 @@ import random
 
 
 class KuhnPokerGame:
-    def __init__(self, deck_size, stacks=(10, 10)):
+    def __init__(self, deck_size, stacks, first_player):
         self.deck_size = deck_size
         self.stacks = stacks
         self.community_pot = (0, 0)
@@ -14,6 +14,9 @@ class KuhnPokerGame:
                           'Check', 'Bet', 'Fold', 'Call',
                           '', '', 'Fold', 'Call']
         self.tree_loc = 0  # 2*i + 1, 2*i + 2
+        self.dealt_cards = self.dealCards()
+        self.deck = ['J', 'Q', 'K']
+        self.first_player = first_player
 
     def build_deck():
         deck = ['J', 'Q', 'K']
@@ -27,6 +30,9 @@ class KuhnPokerGame:
             self.game_tree[2 * self.tree_loc + 1]: 2 * self.tree_loc + 1,
             self.game_tree[2 * self.tree_loc + 2]: 2 * self.tree_loc + 2
         }
+
+    def moveTreeLocation(self, loc):
+        self.tree_loc = loc
 
     def requireAnte(self, ante):
         self.community_pot = (
@@ -56,7 +62,6 @@ class KuhnPokerGame:
 
 class Bot:
     def __init__(self, deck_size):
-        # MOVE # (0 or 2) : {J: [prob distribution], Q: [prob distribution]}
         self.strategy_distribution = {}
         self.deck_size = deck_size
         self.action_index = ['Fold', 'Call', 'Check', 'Bet']
@@ -93,30 +98,30 @@ def readPokerBot(model, deck_size):
 @ click.command()
 @ click.argument('model', type=click.Path(exists=True))
 @ click.option('--cheat', type=bool, default=False)
-def main(model, cheat):
+@ click.option('--firstplayer', type=bool, default=True)
+@ click.option('--initstack', type=int, default=10)
+def main(model, cheat, firstplayer, initstack):
     # net = jit.load(model)
     strategy = readPokerBot(model, 3)
-    game = KuhnPokerGame(3, stacks=(1, 1))
-    startingPlayer = 0  # player is 0, bot is 1
+    game = KuhnPokerGame(3, (initstack, initstack), 0 if firstplayer else 1)
+    # player is 0, bot is 1
     while(True):
         click.echo(click.style(
             '---------------------------------- STARTING GAME ----------------------------------', bg='white', fg='black'))
-
         click.echo(">>> Requiring ante of 1")
         game.requireAnte(1)
         click.echo(">>> Current stacks: " + str(game.stacks))
 
-        cardDealt = game.dealCards()
+        cardDealt = game.dealt_cards
 
         if(cheat):
             click.echo(click.style(
-                ">>> You have: " + str(cardDealt[0]) + ", the bot has: " + str(cardDealt[1]), fg='green'))
+                ">>> You have: " + game.deck[cardDealt[0]] + ", the bot has: " + game.deck[cardDealt[1]], fg='blue'))
         else:
             click.echo(click.style(">>> You have: " +
-                       str(cardDealt[0]), fg='blue'))
+                       game.deck[cardDealt[0]], fg='green'))
 
-        currentPlayer = startingPlayer
-
+        currentPlayer = game.first_player
         lastAction = ''
         while(not game.isTerminal()):
             actionList = game.getPossibleActions()
@@ -135,7 +140,7 @@ def main(model, cheat):
             elif action == 'Call':
                 game.playerBetPotUpdate(currentPlayer)
 
-            game.tree_loc = actionList[action]
+            game.moveTreeLocation(actionList[action])
             lastAction = action
             currentPlayer = (currentPlayer + 1) % 2
 
@@ -162,8 +167,7 @@ def main(model, cheat):
                    "! Final amount: " + str(currentStacks) + " -----------------", bg='white', fg='black'))
         click.echo("")
         click.echo("")
-        game = KuhnPokerGame(3, stacks=currentStacks)
-        startingPlayer = (startingPlayer + 1) % 2
+        game = KuhnPokerGame(3, currentStacks, (game.first_player + 1) % 2)
 
 
 if __name__ == "__main__":
