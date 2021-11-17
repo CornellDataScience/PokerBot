@@ -34,6 +34,16 @@ class KuhnPokerGame:
         else:
             return 1 if self.dealt_cards[1] > self.dealt_cards[0] else 0
 
+    def updateWinnerStack(self):
+        winner = self.getWinner()
+        if(winner == 0):
+            self.stacks = (
+                self.stacks[winner] + self.getPotValue(), self.stacks[1])
+        else:
+            self.stacks = (
+                self.stacks[0], self.stacks[winner] + self.getPotValue())
+        return self.stacks
+
     def getPossibleActions(self):
         return {
             self.game_tree[2 * self.tree_loc + 1]: 2 * self.tree_loc + 1,
@@ -134,12 +144,9 @@ def main(model, cheat, firstplayer, initstack):
             click.echo(click.style(">>> You have: " +
                        game.deck[cardDealt[0]], fg='green'))
 
-        #currentPlayer = game.first_player
-        lastAction = ''
         while(not game.isTerminal()):
             actionList = game.getPossibleActions()
 
-            action = 0
             if(game.current_player == 0):
                 action = click.prompt(click.style(
                     "Do you choose to: " + str(actionList.keys()), fg='green'))
@@ -156,15 +163,8 @@ def main(model, cheat, firstplayer, initstack):
             game.moveTreeLocation(actionList[action])
             game.switchPlayer(action)
 
-        currentStacks = game.stacks
+        currentStacks = game.updateWinnerStack()
         winner = game.getWinner()
-        # update stacks
-        if(winner == 0):
-            currentStacks = (
-                currentStacks[winner] + game.getPotValue(), currentStacks[1])
-        else:
-            currentStacks = (
-                currentStacks[0], currentStacks[winner] + game.getPotValue())
 
         # reinitialize game.
         winnerName = "the bot" if winner == 1 else "you"
